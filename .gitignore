@@ -1,0 +1,21 @@
+#binaries
+bin
+
+# Object files
+*.o
+
+# Executables
+*.exe
+*.out
+*.app
+
+#editor buffers
+.*.swp
+*~
+
+#eclipse
+.cproject
+.project
+
+#scons
+.sconsign.dblite
