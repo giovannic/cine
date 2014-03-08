@@ -17,14 +17,10 @@ using namespace std;
 
 TEST_CASE( "Loader", "[loader]" ) {
 
-	char cwd[1024];
-	REQUIRE (getcwd(cwd, sizeof(cwd)) != NULL);
-
 	//basic
-	stringstream path(cwd);
-	path << "testinputs/threads";
-	string threadfile(path.str());
-	//REQUIRE( Launcher(&path).launch() );
+	string testpath(BIN_PATH);
+	string threadfile = testpath + "/threads";
+	REQUIRE( Launcher(&threadfile).launch() );
 
 	//arguments
 	string echo = "/bin/echo";
