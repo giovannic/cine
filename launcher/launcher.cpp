@@ -7,11 +7,15 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <iostream>
-#include "launcher.hpp"
 #include <sys/wait.h>
 #include <vector>
+#include <cstring>
+
+#include "launcher.hpp"
+#include "instrumentor.hpp"
 
 //Dyninst
+#include "BPatch.h"
 #include "PCProcess.h"
 #include "Event.h"
 
@@ -36,25 +40,34 @@ void Launcher::add_arguments(string *args){
 	this->args->push_back(*args);
 }
 
+const char *tocstring(const std::string & s)
+{
+   return s.c_str();
+}
+
 bool Launcher::launch(){
 
-	Process::ptr proc = Process::createProcess(*input, *args);
+	BPatch bpatch;
 
-	//start profiler
-	if(profiler != NULL){
-		profiler->start(proc.get()->getPid());
+	vector<const char *>argv;
+	for( std::vector<string>::const_iterator i = args->begin(); i != args->end(); ++i){
+	    argv.push_back(i->c_str());
 	}
+	argv.push_back(NULL);
+
+	char path[input->size()];
+	strcpy(path, input->c_str());
+
+	BPatch_process *proc = bpatch.processCreate(path, argv.data());
+	Instrumentor inst(proc->getImage());
 
 	//Tell ProcControlAPI about our callback function
 	Process::registerEventCallback(EventType::ThreadCreate, on_thread_create);
+
 	//Run the process and wait for it to terminate.
-	proc->continueProc();
+	proc->continueExecution();
 	while (!proc->isTerminated())
 		Process::handleEvents(true);
-
-	if(profiler != NULL){
-		profiler->stop();
-	}
 
 	return true;
 }

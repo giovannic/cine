@@ -9,11 +9,21 @@
 #include "catch.hpp"
 #include "launcher.hpp"
 #include "OProfile.hpp"
+#include <unistd.h>
+#include <iostream>
+#include <sstream>
+
+using namespace std;
 
 TEST_CASE( "Loader", "[loader]" ) {
 
+	char cwd[1024];
+	REQUIRE (getcwd(cwd, sizeof(cwd)) != NULL);
+
 	//basic
-	string path = "/home/giovanni/project/whatif/ctests/testinputs/threads";
+	stringstream path(cwd);
+	path << "testinputs/threads";
+	string threadfile(path.str());
 	//REQUIRE( Launcher(&path).launch() );
 
 	//arguments
@@ -26,8 +36,7 @@ TEST_CASE( "Loader", "[loader]" ) {
 	REQUIRE( l.launch() );
 
 	//profiler
-	l = Launcher(&path);
-	string opdir = "/usr/local/bin";
-	l.profiler = new OProfile(&opdir);
-	REQUIRE( l.launch() );
+	//l = Launcher(&threadfile);
+	//string opdir = "/usr/local/bin";
+	//REQUIRE( l.launch() );
 }
