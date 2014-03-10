@@ -19,12 +19,38 @@
 #include "PCProcess.h"
 #include "Event.h"
 
+//vex
+#include "VTF.h"
+
 using namespace std;
 using namespace Dyninst;
 using namespace ProcControlAPI;
+using namespace VEX;
 
 Process::cb_ret_t on_thread_create(Event::const_ptr ev) {
 	cout << "thread created" << endl;
+	cout << ev->name() << endl;
+	Thread::const_ptr t = ev->getThread();
+	long id = t->getTID();
+
+	//TODO: store locally
+	//TODO: wrap start
+	if (t->isInitialThread()){
+		//threadEventsBehaviour->onThreadMainStart(id);
+	} else {
+		//TODO: get name from thread info block
+		//threadEventsBehaviour->onStart(id, "subthread");
+	}
+	return Process::cbDefault;
+}
+
+Process::cb_ret_t on_thread_exit(Event::const_ptr ev) {
+	cout << "thread exiting" << endl;
+	cout << ev->name() << endl;
+	Thread::const_ptr t = ev->getThread();
+	long id = t->getTID();
+
+	//threadEventsBehaviour->onThreadMainStart(id);
 	return Process::cbDefault;
 }
 
@@ -40,11 +66,6 @@ void Launcher::add_arguments(string *args){
 	this->args->push_back(*args);
 }
 
-const char *tocstring(const std::string & s)
-{
-   return s.c_str();
-}
-
 bool Launcher::launch(){
 
 	BPatch bpatch;
@@ -58,15 +79,21 @@ bool Launcher::launch(){
 	char path[input->size()];
 	strcpy(path, input->c_str());
 
-	BPatch_process *proc = bpatch.processCreate(path, argv.data());
-	Instrumentor inst(proc->getImage());
+	bool success = initializeSimulator(NULL);
+	if(!success){
+		cerr << "vex faliure" << endl;
+		return false;
+	}
+
+	BPatch_process *app = bpatch.processCreate(path, argv.data());
+	//Instrumentor inst(app->getImage());
 
 	//Tell ProcControlAPI about our callback function
-	Process::registerEventCallback(EventType::ThreadCreate, on_thread_create);
-
+	Process::registerEventCallback(EventType::UserThreadCreate, on_thread_create);
+	Process::registerEventCallback(EventType::UserThreadDestroy, on_thread_exit);
 	//Run the process and wait for it to terminate.
-	proc->continueExecution();
-	while (!proc->isTerminated())
+	app->continueExecution();
+	while (!app->isTerminated())
 		Process::handleEvents(true);
 
 	return true;

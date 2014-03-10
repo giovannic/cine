@@ -7,13 +7,13 @@
 
 #include<vector>
 #include "instrumentor.hpp"
-
+#include "BPatch_function.h"
 using namespace std;
 
 Instrumentor::Instrumentor(BPatch_image *img){
 	vector<BPatch_function *> *fs = img->getProcedures(false);
 	for( std::vector<BPatch_function *>::const_iterator i = fs->begin(); i != fs->end(); ++i)
-	    std::cout << *i << ' ';
+	    cout << (**i).getDemangledName() << endl;
 }
 
 

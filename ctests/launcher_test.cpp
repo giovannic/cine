@@ -22,6 +22,14 @@ TEST_CASE( "Loader", "[loader]" ) {
 	string threadfile = testpath + "/threads";
 	REQUIRE( Launcher(&threadfile).launch() );
 
+	//profiler
+	//l = Launcher(&threadfile);
+	//string opdir = "/usr/local/bin";
+	//REQUIRE( l.launch() );
+}
+
+TEST_CASE( "Arguments", "[loader]" ) {
+
 	//arguments
 	string echo = "/bin/echo";
 	string args = "hello world";
@@ -30,9 +38,9 @@ TEST_CASE( "Loader", "[loader]" ) {
 	l.add_arguments(&args);
 
 	REQUIRE( l.launch() );
+}
 
-	//profiler
-	//l = Launcher(&threadfile);
-	//string opdir = "/usr/local/bin";
-	//REQUIRE( l.launch() );
+TEST_CASE( "Vex integration", "[loader]" ) {
+
+
 }
