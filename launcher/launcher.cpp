@@ -36,10 +36,10 @@ Process::cb_ret_t on_thread_create(Event::const_ptr ev) {
 	//TODO: store locally
 	//TODO: wrap start
 	if (t->isInitialThread()){
-		//threadEventsBehaviour->onThreadMainStart(id);
+		threadEventsBehaviour->onThreadMainStart(id);
 	} else {
 		//TODO: get name from thread info block
-		//threadEventsBehaviour->onStart(id, "subthread");
+		threadEventsBehaviour->onStart(id, "subthread");
 	}
 	return Process::cbDefault;
 }
@@ -50,7 +50,7 @@ Process::cb_ret_t on_thread_exit(Event::const_ptr ev) {
 	Thread::const_ptr t = ev->getThread();
 	long id = t->getTID();
 
-	//threadEventsBehaviour->onThreadMainStart(id);
+	threadEventsBehaviour->onJoin(id);
 	return Process::cbDefault;
 }
 
@@ -86,7 +86,7 @@ bool Launcher::launch(){
 	}
 
 	BPatch_process *app = bpatch.processCreate(path, argv.data());
-	//Instrumentor inst(app->getImage());
+	Instrumentor inst(app->getImage());
 
 	//Tell ProcControlAPI about our callback function
 	Process::registerEventCallback(EventType::UserThreadCreate, on_thread_create);
@@ -94,7 +94,7 @@ bool Launcher::launch(){
 	//Run the process and wait for it to terminate.
 	app->continueExecution();
 	while (!app->isTerminated())
-		Process::handleEvents(true);
+		bpatch.waitForStatusChange();
 
 	return true;
 }
