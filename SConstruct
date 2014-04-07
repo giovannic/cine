@@ -1,11 +1,12 @@
 
-dyninst = '/home/giovanni/pre'
-dyninstlib = '/home/giovanni/epre/lib'
-dyninstinc = '/home/giovanni/pre/include'
+dyninst = ARGUMENTS.get('dyninst', '/home/giovanni/dyninst')
+dyninstlib = dyninst + '/lib'
+dyninstinc = dyninst + '/include'
 
-vexlib = '/home/giovanni/vexjine/src/vex'
-vexagentlib = '/home/giovanni/vexjine/src/jine'
-vexinc = '/home/giovanni/vexjine/src/vex'
+vex = ARGUMENTS.get('vex', '/home/giovanni/vexjine')
+vexagentlib = vex + '/src/jine'
+vexinc = vex + '/src/vex'
+vexlib = vexinc
 
 dwarf = '/home/giovanni/oss/deps/libdwarf'
 
