@@ -46,7 +46,7 @@ Instrumenter::Instrumenter(BPatch_image *img){
 	app = img->getAddressSpace();
 
     //TODO: check that libcine is there
-	if(!app->loadLibrary("./libcine.so")){
+	if(!app->loadLibrary("libvex.so")){
 		cout << "failed" << endl;
 	} else {
 		cout << "succeeded" << endl;

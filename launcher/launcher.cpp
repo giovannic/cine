@@ -27,16 +27,15 @@ using namespace Dyninst;
 using namespace ProcControlAPI;
 using namespace VEX;
 
+
+//TODO:make this execute on the target with irpc or callback delivery
 Process::cb_ret_t on_thread_create(Event::const_ptr ev) {
 	Thread::const_ptr t = ev->getThread();
 	long id = t->getTID();
 
-	//TODO: store locally
-	//TODO: wrap start
 	if (t->isInitialThread()){
 		threadEventsBehaviour->onThreadMainStart(id);
 	} else {
-		//TODO: get name from thread info block
 		threadEventsBehaviour->onStart(id, "subthread");
 	}
 	return Process::cbDefault;
