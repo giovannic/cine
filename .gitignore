@@ -3,6 +3,8 @@ bin
 
 # Object files
 *.o
+*.so
+*.os
 
 # Executables
 *.exe

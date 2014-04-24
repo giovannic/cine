@@ -12,7 +12,7 @@
 #include <cstring>
 
 #include "launcher.hpp"
-#include "instrumentor.hpp"
+#include "instrumenter.hpp"
 
 //Dyninst
 #include "BPatch.h"
@@ -28,8 +28,6 @@ using namespace ProcControlAPI;
 using namespace VEX;
 
 Process::cb_ret_t on_thread_create(Event::const_ptr ev) {
-	cout << "thread created" << endl;
-	cout << ev->name() << endl;
 	Thread::const_ptr t = ev->getThread();
 	long id = t->getTID();
 
@@ -45,8 +43,6 @@ Process::cb_ret_t on_thread_create(Event::const_ptr ev) {
 }
 
 Process::cb_ret_t on_thread_exit(Event::const_ptr ev) {
-	cout << "thread exiting" << endl;
-	cout << ev->name() << endl;
 	Thread::const_ptr t = ev->getThread();
 	long id = t->getTID();
 
@@ -86,7 +82,7 @@ bool Launcher::launch(){
 	}
 
 	BPatch_process *app = bpatch.processCreate(path, argv.data());
-	Instrumentor inst(app->getImage());
+	Instrumenter inst(app->getImage());
 
 	//Tell ProcControlAPI about our callback function
 	Process::registerEventCallback(EventType::UserThreadCreate, on_thread_create);

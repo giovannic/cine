@@ -8,7 +8,6 @@
 #define CATCH_CONFIG_MAIN
 #include "catch.hpp"
 #include "launcher.hpp"
-#include "OProfile.hpp"
 #include <unistd.h>
 #include <iostream>
 #include <sstream>
