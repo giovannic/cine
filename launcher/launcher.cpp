@@ -12,7 +12,7 @@
 #include <cstring>
 
 #include "launcher.hpp"
-#include "instrumentor.hpp"
+#include "instrumenter.hpp"
 
 //Dyninst
 #include "BPatch.h"
@@ -91,6 +91,7 @@ bool Launcher::launch(){
 	//Tell ProcControlAPI about our callback function
 	Process::registerEventCallback(EventType::UserThreadCreate, on_thread_create);
 	Process::registerEventCallback(EventType::UserThreadDestroy, on_thread_exit);
+
 	//Run the process and wait for it to terminate.
 	app->continueExecution();
 	while (!app->isTerminated())

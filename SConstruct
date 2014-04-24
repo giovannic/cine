@@ -23,6 +23,6 @@ bins = '\\"%s\\"' % Dir('ctests/testinputs').abspath
 
 test_env.Append(CPPDEFINES={'BIN_PATH': bins})
 
-test_sources = ['launcher/launcher.cpp', 'profiler/instrumentor.cpp', 'ctests/launcher_test.cpp']
+test_sources = ['launcher/launcher.cpp', 'profiler/instrumenter.cpp', 'ctests/launcher_test.cpp']
 
 test_env.Program('bin/launcher_test', test_sources)
