@@ -19,6 +19,7 @@ void Instrumenter::insertCall(BPatch_addressSpace *app, BPatch_function *input){
 	//arg 0, thread calling
 	timerArgs.push_back(&BPatch_threadIndexExpr());
 	//arg 1, function call
+	//have to workout arguments
 	timerArgs.push_back(&BPatch_funcCallExpr(input));
 
 	BPatch_point * entry = input->findPoint(BPatch_entry);
