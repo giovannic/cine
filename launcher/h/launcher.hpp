@@ -8,19 +8,25 @@
 #ifndef LAUNCHER_HPP_
 #define LAUNCHER_HPP_
 #include <vector>
-#include "OProfile.hpp"
+#include "BPatch.h"
+#include "instrumenter.hpp"
 
 using namespace std;
 
 class Launcher{
 public:
-	string *input;
-	vector<string> *args;
-	OProfile *profiler;
+	string *input = NULL;
+	vector<string> *args = NULL;
+	Instrumenter *inst = NULL;
+	BPatch *bpatch = NULL;
 
 	Launcher(string *input);
-	bool launch();
+	bool setup();
+	void launch();
 	void add_arguments(string *args);
+	BPatch_process *createProcess();
+private:
+	BPatch_process *app = NULL;
 };
 
 

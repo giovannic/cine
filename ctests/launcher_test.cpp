@@ -14,18 +14,19 @@
 
 using namespace std;
 
-TEST_CASE( "Loader", "[loader]" ) {
+TEST_CASE( "Create process", "[loader]" ) {
 
 	//basic
 	string testpath(BIN_PATH);
 	string threadfile = testpath + "/threads";
-	REQUIRE( Launcher(&threadfile).launch() );
+	Launcher l(&threadfile);
 
-	//profiler
-	//l = Launcher(&threadfile);
-	//string opdir = "/usr/local/bin";
-	//REQUIRE( l.launch() );
+	BPatch_process *app = l.createProcess();
+	REQUIRE(app != NULL);
+	l.launch(); //no errors
+
 }
+
 
 TEST_CASE( "Arguments", "[loader]" ) {
 
@@ -33,10 +34,13 @@ TEST_CASE( "Arguments", "[loader]" ) {
 	string echo = "/bin/echo";
 	string args = "hello world";
 
-	Launcher l = Launcher(&echo);
+	Launcher l(&echo);
 	l.add_arguments(&args);
 
-	REQUIRE( l.launch() );
+	BPatch_process *app = l.createProcess();
+	REQUIRE(app != NULL);
+	//l.launch(); //no errors
+
 }
 
 TEST_CASE( "Vex integration", "[loader]" ) {

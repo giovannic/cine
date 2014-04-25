@@ -22,13 +22,16 @@ test_env.Append(CPPPATH=['ctests/h', 'launcher/h', 'profiler/h', dyninstinc, vex
 bins = '\\"%s\\"' % Dir('ctests/testinputs').abspath
 test_env.Append(CPPDEFINES={'BIN_PATH': bins})
 
-test_sources = ['launcher/launcher.cpp', 'profiler/instrumenter.cpp', 'ctests/launcher_test.cpp']
-test_env.Program('bin/launcher_test', test_sources)
+launcher_test_sources = ['launcher/launcher.cpp', 'profiler/instrumenter.cpp', 'ctests/launcher_test.cpp']
+test_env.Program('bin/launcher_test', launcher_test_sources)
+instrument_test_sources = ['launcher/launcher.cpp', 'profiler/instrumenter.cpp', 'ctests/instrument_test.cpp']
+test_env.Program('bin/instrument_test', instrument_test_sources)
 
 #libcine
 cine_env = Environment()
 cine_sources = ['profiler/cine.cpp']
-cine_env.Append(CPPPATH=['profiler/h', dyninstinc])
-cine_env.Append(LIBPATH=[dyninstlib])
-cine_env.Append(LIBS=['dyninstAPI_RT'])
+cine_env.Append(CPPPATH=['profiler/h', dyninstinc, vexinc])
+cine_env.Append(LIBPATH=[dyninstlib, vexlib])
+cine_env.Append(LIBS=['pthread'])
+#cine_env.Append(CCFLAGS=['-O0'])
 cine = cine_env.SharedLibrary('bin/cine.so', cine_sources)
