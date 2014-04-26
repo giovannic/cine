@@ -14,6 +14,30 @@
 using namespace std;
 using namespace Dyninst::SymtabAPI;
 
+void debugSymtab(Module *lib){
+	vector <Symbol *> libfs;
+	//get the method names
+	lib->getAllSymbols(libfs);
+	for( std::vector<Symbol *>::const_iterator i = libfs.begin();
+			i != libfs.end(); ++i)
+	{
+		Symbol *f = *i;
+	    cout << f->getMangledName() << endl;
+
+	}
+}
+void debugModule(BPatch_module *lib){
+	vector <BPatch_function *> libfs;
+	//get the method names
+	lib->getProcedures(libfs, true);
+	for( std::vector<BPatch_function *>::const_iterator i = libfs.begin();
+			i != libfs.end(); ++i)
+	{
+		BPatch_function *f = *i;
+	    cout << f->getName() << endl;
+
+	}
+}
 Instrumenter::Instrumenter(BPatch_image *input){
 
 	img = input;
@@ -28,32 +52,45 @@ BPatchSnippetHandle *Instrumenter::insertCall(BPatch_function &input,
 	return NULL; // not finished //app->insertSnippet(lfCall);
 }
 
+/*
+ * until I can get find symbol to work
+ */
+Symbol *findSymbol(Module *m, string s){
+	vector <Symbol *> syms;
+	//get the method names
+	m->getAllSymbols(syms);
+	for( std::vector<Symbol *>::const_iterator i = syms.begin();
+			i != syms.end(); ++i){
+		Symbol *f = *i;
+		if (f->getPrettyName() == s){
+			return f;
+		}
+	}
+	return NULL;
+//	symtab->findSymbol(matches, "orig_thread_create\0",
+//			Symbol::ST_FUNCTION,
+//			prettyName,
+//			false,
+//			false,
+//			true);
+
+}
+
 bool Instrumenter::insertThreadCalls(){
 	BPatch_function *create = getFunction("pthread_create");
 	BPatch_function *cineCreate= getFunction("cine_thread_create");
+	BPatch_function *replaceCreate = getFunction("orig_thread_create");
 	Module *symtab = convert(cineCreate->getModule());
-	vector<Symbol *> matches;
-	symtab->findSymbol(matches, "orig_thread_create",
-			Symbol::ST_UNKNOWN,
-			mangledName,
-			false,
-			false,
-			true);
-	if (matches.size() != 1){
-		cerr << matches.size() << " replacement functions found" << endl;
+	debugSymtab(symtab);
+
+	Symbol *sym = findSymbol(symtab, "orig_thread_create");
+
+	if (sym == NULL){
+		cerr << "no replacement functions found" << endl;
 		return false;
 	}
-	app->wrapFunction(create, cineCreate, matches.front());
+	app->wrapFunction(create, cineCreate, sym);
 	return true;
-/*
-	vector<BPatch_snippet*>args;
-	BPatch_funcCallExpr lfCall(*cineCreate, args);
-
-	//TODO: find the right point
-	return app->insertSnippet(lfCall,
-			*create->findPoint(BPatch_locEntry),
-			BPatch_callBefore);
-			*/
 }
 
 bool Instrumenter::beginSimulator(BPatch_process *p){
@@ -99,3 +136,4 @@ BPatch_function *Instrumenter::getFunction(string s){
 BPatch_function *Instrumenter::getPCreate(){
 	return getFunction("pthread_create");
 }
+

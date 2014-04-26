@@ -51,19 +51,6 @@ TEST_CASE( "VEX and CINE", "[instruments]" ) {
 	REQUIRE(vex != NULL);
 	REQUIRE(cine != NULL);
 
-	/*
-	vector <BPatch_function *> cinelib;
-	//get the method names
-	cine->getProcedures(cinelib, true);
-	for( std::vector<BPatch_function *>::const_iterator i = cinelib.begin();
-			i != cinelib.end(); ++i)
-	{
-		BPatch_function *f = *i;
-	    cout << f->getName() << endl;
-
-	}
-	*/
-
 	//cine
 	REQUIRE(inst.getFunction("cine_thread_create") != NULL);
 	REQUIRE(inst.getFunction("orig_thread_create") != NULL);
