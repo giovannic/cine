@@ -21,16 +21,13 @@ int orig_thread_create(pthread_t *thread, const pthread_attr_t *attr,
 
 int cine_thread_create(pthread_t *thread, const pthread_attr_t *attr,
 	                          void *(*start_routine) (void *), void *arg){
-	cout << "in wrapper" << endl;
 	int result = orig_thread_create(thread, attr, start_routine, arg);
 	//Hopefully there is no switch before this executes
-	/*
 	if (!result){
 		char n[50];
 		pthread_getname_np(*thread, n, sizeof(n));
-		cout << n << endl;
+		cout << n << " with id " << (long) thread << endl;
 	}
-	*/
 	return result;
 }
 

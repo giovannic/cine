@@ -81,7 +81,6 @@ bool Instrumenter::insertThreadCalls(){
 	BPatch_function *cineCreate= getFunction("cine_thread_create");
 	BPatch_function *replaceCreate = getFunction("orig_thread_create");
 	Module *symtab = convert(cineCreate->getModule());
-	debugSymtab(symtab);
 
 	Symbol *sym = findSymbol(symtab, "orig_thread_create");
 

@@ -21,6 +21,7 @@ public:
 	BPatch *bpatch = NULL;
 
 	Launcher(string *input);
+	virtual ~Launcher();
 	bool setup();
 	void launch();
 	void add_arguments(string *args);
