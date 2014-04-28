@@ -49,7 +49,8 @@ TEST_CASE( "Pthreads", "[instruments]" ) {
 	SECTION("instrument pthreads"){
 		REQUIRE(inst.loadLibraries());
 		REQUIRE(inst.insertThreadCalls());
+		//somehow check
+		l.launch();
 	}
 
-	l.launch();
 }
