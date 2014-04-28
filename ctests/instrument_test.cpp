@@ -1,5 +1,5 @@
 /*
- * launcher_test.c
+ * instrument_test.c
  *
  *  Created on: 5 Feb 2014
  *      Author: giovanni
