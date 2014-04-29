@@ -15,6 +15,7 @@
 
 using namespace std;
 
+//privatise and remove
 class Instrumenter {
 public:
 	Instrumenter(BPatch_image *img);

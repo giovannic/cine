@@ -9,7 +9,7 @@
 #define LAUNCHER_HPP_
 #include <vector>
 #include "BPatch.h"
-#include "instrumenter.hpp"
+#include "Instrumenter.h"
 
 using namespace std;
 

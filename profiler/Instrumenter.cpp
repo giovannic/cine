@@ -6,7 +6,7 @@
  */
 
 #include <vector>
-#include "instrumenter.hpp"
+#include "Instrumenter.h"
 #include "BPatch_function.h"
 #include "BPatch_point.h"
 #include "Symtab.h"
@@ -14,30 +14,6 @@
 using namespace std;
 using namespace Dyninst::SymtabAPI;
 
-void debugSymtab(Module *lib){
-	vector <Symbol *> libfs;
-	//get the method names
-	lib->getAllSymbols(libfs);
-	for( std::vector<Symbol *>::const_iterator i = libfs.begin();
-			i != libfs.end(); ++i)
-	{
-		Symbol *f = *i;
-	    cout << f->getMangledName() << endl;
-
-	}
-}
-void debugModule(BPatch_module *lib){
-	vector <BPatch_function *> libfs;
-	//get the method names
-	lib->getProcedures(libfs, true);
-	for( std::vector<BPatch_function *>::const_iterator i = libfs.begin();
-			i != libfs.end(); ++i)
-	{
-		BPatch_function *f = *i;
-	    cout << f->getName() << endl;
-
-	}
-}
 Instrumenter::Instrumenter(BPatch_image *input){
 
 	img = input;
@@ -105,13 +81,13 @@ bool Instrumenter::beginSimulator(BPatch_process *p){
 
 bool Instrumenter::loadLibraries(){
 
-	if(!app->loadLibrary("libcine.so")){
-		cerr << "target loading of cine failed" << endl;
+	if(!app->loadLibrary("libvex.so")){
+		cerr << "target loading of vex failed" << endl;
 		return false;
 	}
 
-	if(!app->loadLibrary("libvex.so")){
-		cerr << "target loading of vex failed" << endl;
+	if(!app->loadLibrary("libcine.so")){
+		cerr << "target loading of cine failed" << endl;
 		return false;
 	}
 

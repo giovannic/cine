@@ -7,8 +7,8 @@
 
 #define CATCH_CONFIG_MAIN
 #include "catch.hpp"
-#include "launcher.hpp"
-#include "instrumenter.hpp"
+#include "Launcher.h"
+#include "Instrumenter.h"
 #include <unistd.h>
 #include <iostream>
 #include <sstream>
@@ -46,11 +46,12 @@ TEST_CASE( "Pthreads", "[instruments]" ) {
 	}
 
 	//insert more here
-	SECTION("instrument pthreads"){
+	SECTION("control pthreads"){
 		REQUIRE(inst.loadLibraries());
-		REQUIRE(inst.insertThreadCalls());
+		//REQUIRE(inst.insertThreadCalls());
 		//somehow check
 		l.launch();
 	}
+
 
 }

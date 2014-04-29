@@ -10,12 +10,12 @@
 #include <vector>
 #include <cstring>
 
-#include "launcher.hpp"
-#include "instrumenter.hpp"
+#include "Launcher.h"
+#include "Instrumenter.h"
+#include "Controller.h"
 
 //Dyninst
 #include "BPatch.h"
-#include "Event.h"
 
 using namespace std;
 using namespace Dyninst;
@@ -29,6 +29,7 @@ Launcher::Launcher(string *input){
 }
 
 Launcher::~Launcher(){
+	app->terminateExecution();
 	delete input;
 	delete args;
 	delete bpatch;
@@ -36,6 +37,7 @@ Launcher::~Launcher(){
 
 void Launcher::add_arguments(string *args){
 	//TODO parse arguments
+	//there can only be one
 	this->args->push_back(*args);
 }
 
@@ -65,6 +67,7 @@ bool Launcher::setup(){
 	app = createProcess();
 
 	inst = new Instrumenter(app->getImage());
+	Controller *controller = new Controller();
 
 	if(!inst->loadLibraries()){
 		cerr << "libraries did not load" << endl;
@@ -80,16 +83,6 @@ bool Launcher::setup(){
 		cerr << "could not patch pthread" << endl;
 		return false;
 	}
-	//Tell ProcControlAPI about our callback function
-	//Process::registerEventCallback(EventType::UserThreadCreate, on_thread_create);
-	//Process::registerEventCallback(EventType::UserThreadDestroy, on_thread_exit);
-	//Run the process and wait for it to terminate.
 
 	return true;
 }
-//
-//Launcher::~Launcher(){
-//	if(app){
-//		app->terminateExecution();
-//	}
-//}

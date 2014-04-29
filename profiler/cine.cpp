@@ -6,7 +6,7 @@
  */
 
 #include <cstddef>
-#include "cine.hpp"
+#include "cine.h"
 #include <pthread.h>
 #include <iostream>
 #include "VTF.h"
@@ -26,7 +26,7 @@ int cine_thread_create(pthread_t *thread, const pthread_attr_t *attr,
 	if (!result){
 		char n[50];
 		pthread_getname_np(*thread, n, sizeof(n));
-		cout << n << " with id " << (long) thread << endl;
+		threadEventsBehaviour->onStart((long) result, n);
 	}
 	return result;
 }
