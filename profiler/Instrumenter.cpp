@@ -7,6 +7,7 @@
 
 #include <vector>
 #include "Instrumenter.h"
+#include "Analyser.h"
 #include "BPatch_function.h"
 #include "BPatch_point.h"
 #include "Symtab.h"
@@ -14,22 +15,13 @@
 using namespace std;
 using namespace Dyninst::SymtabAPI;
 
-Instrumenter::Instrumenter(BPatch_image *input){
-
-	img = input;
-	app = img->getAddressSpace();
-
-}
-
-BPatchSnippetHandle *Instrumenter::insertCall(BPatch_function &input,
-		BPatch_function &libFunc, vector<BPatch_snippet*> &args){
-
-	BPatch_funcCallExpr lfCall(libFunc, args);
-	return NULL; // not finished //app->insertSnippet(lfCall);
+Instrumenter::Instrumenter(Analyser *a, BPatch_addressSpace *as){
+	analyser = a;
+	app = as;
 }
 
 /*
- * until I can get find symbol to work
+ * until I can get find symbol to work pull this into analyser
  */
 Symbol *findSymbol(Module *m, string s){
 	vector <Symbol *> syms;
@@ -53,9 +45,8 @@ Symbol *findSymbol(Module *m, string s){
 }
 
 bool Instrumenter::insertThreadCalls(){
-	BPatch_function *create = getFunction("pthread_create");
-	BPatch_function *cineCreate= getFunction("cine_thread_create");
-	BPatch_function *replaceCreate = getFunction("orig_thread_create");
+	BPatch_function *create = analyser->getFunction("pthread_create");
+	BPatch_function *cineCreate= analyser->getFunction("cine_thread_create");
 	Module *symtab = convert(cineCreate->getModule());
 
 	Symbol *sym = findSymbol(symtab, "orig_thread_create");
@@ -68,9 +59,25 @@ bool Instrumenter::insertThreadCalls(){
 	return true;
 }
 
+bool Instrumenter::timeFunction(BPatch_function *f, int methodId){
+	vector<BPatch_point *> *entries = f->findPoint(BPatch_entry);
+	vector<BPatch_point *> *exits = f->findPoint(BPatch_exit);
+	BPatch_function *timerStart = analyser->getFunction("cine_timer_entry");
+	BPatch_function *timerStop = analyser->getFunction("cine_timer_exit");
+	vector<BPatch_snippet *>args;
+	BPatch_constExpr mid(methodId);
+	args.push_back(&mid);
+
+	BPatch_funcCallExpr timerStartCall(*timerStart, args);
+	BPatch_funcCallExpr timerStopCall(*timerStop, args);
+	app->insertSnippet(timerStartCall, *entries);
+	app->insertSnippet(timerStopCall, *exits);
+	return true;
+}
+
 bool Instrumenter::beginSimulator(BPatch_process *p){
 	//generate a call to VEX::initializeSimulator(NULL)
-	BPatch_function * init = getFunction("VEX::initializeSimulator");
+	BPatch_function * init = analyser->getFunction("VEX::initializeSimulator");
 	vector<BPatch_snippet *> args;
 	BPatch_nullExpr null;
 	args.push_back(&null);
@@ -94,21 +101,3 @@ bool Instrumenter::loadLibraries(){
 	return true;
 
 }
-
-BPatch_function *Instrumenter::getFunction(string s){
-
-	vector<BPatch_function *> fs;
-	const char *sArg = s.c_str();
-	img->findFunction(sArg, fs);
-	if (fs.size() != 1){
-		cerr << "[warning] " << fs.size() << " x " << s << endl;
-		return NULL;
-	}
-	return fs.front();
-
-}
-
-BPatch_function *Instrumenter::getPCreate(){
-	return getFunction("pthread_create");
-}
-

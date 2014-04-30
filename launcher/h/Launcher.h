@@ -15,10 +15,6 @@ using namespace std;
 
 class Launcher{
 public:
-	string *input = NULL;
-	vector<string> *args = NULL;
-	Instrumenter *inst = NULL;
-	BPatch *bpatch = NULL;
 
 	Launcher(string *input);
 	virtual ~Launcher();
@@ -27,8 +23,14 @@ public:
 	void add_arguments(string *args);
 	BPatch_process *createProcess();
 private:
-	BPatch_process *app = NULL;
-};
+	string *input;
+	vector<string> *args;
 
+	Instrumenter *inst;
+	Analyser *analyser;
+
+	BPatch *bpatch;
+	BPatch_process *app;
+};
 
 #endif /* LAUNCHER_HPP_ */

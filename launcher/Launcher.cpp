@@ -29,7 +29,7 @@ Launcher::Launcher(string *input){
 }
 
 Launcher::~Launcher(){
-	app->terminateExecution();
+	app->detach(false);
 	delete input;
 	delete args;
 	delete bpatch;
@@ -66,8 +66,8 @@ bool Launcher::setup(){
 
 	app = createProcess();
 
-	inst = new Instrumenter(app->getImage());
-	Controller *controller = new Controller();
+	analyser = new Analyser(app->getImage());
+	inst = new Instrumenter(analyser, app->getImage()->getAddressSpace());
 
 	if(!inst->loadLibraries()){
 		cerr << "libraries did not load" << endl;
@@ -79,10 +79,10 @@ bool Launcher::setup(){
 		return false;
 	}
 
-	if(!inst->insertThreadCalls()){
-		cerr << "could not patch pthread" << endl;
-		return false;
-	}
+//	if(!inst->insertThreadCalls()){
+//		cerr << "could not patch pthread" << endl;
+//		return false;
+//	}
 
 	return true;
 }

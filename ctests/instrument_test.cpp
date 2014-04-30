@@ -8,7 +8,9 @@
 #define CATCH_CONFIG_MAIN
 #include "catch.hpp"
 #include "Launcher.h"
+#include "Controller.h"
 #include "Instrumenter.h"
+#include "Analyser.h"
 #include <unistd.h>
 #include <iostream>
 #include <sstream>
@@ -25,29 +27,56 @@ TEST_CASE( "Pthreads", "[instruments]" ) {
 	BPatch_process *app = l.createProcess();
 	REQUIRE(app != NULL);
 
-	Instrumenter inst(app->getImage());
-	REQUIRE(inst.getPCreate() != NULL);
-	REQUIRE(inst.getFunction("pthread_exit") != NULL);
+	Analyser a(app->getImage());
+	Instrumenter inst(&a, app->getImage()->getAddressSpace());
+
+	SECTION("pthread analysis"){
+		REQUIRE(a.getFunction("pthread_exit") != NULL);
+		REQUIRE(a.getFunction("pthread_exit") != NULL);
+	}
 
 	SECTION("check library functions exist"){
 		REQUIRE(inst.loadLibraries());
-		BPatch_module *vex = inst.img->findModule("libvex.so", false);
-		BPatch_module *cine = inst.img->findModule("libcine.so", false);
+		BPatch_module *vex = app->getImage()->findModule("libvex.so", false);
+		BPatch_module *cine = app->getImage()->findModule("libcine.so", false);
 		REQUIRE(vex != NULL);
 		REQUIRE(cine != NULL);
 
 		//cine
-		REQUIRE(inst.getFunction("cine_thread_create") != NULL);
-		REQUIRE(inst.getFunction("orig_thread_create") != NULL);
+		REQUIRE(a.getFunction("cine_thread_create") != NULL);
+		REQUIRE(a.getFunction("orig_thread_create") != NULL);
 
 		//vex
-		REQUIRE(inst.getFunction("ThreadEventsBehaviour::onStart") != NULL);
-		REQUIRE(inst.getFunction("ThreadEventsBehaviour::onEnd") != NULL);
+		REQUIRE(a.getFunction("ThreadEventsBehaviour::onStart") != NULL);
+		REQUIRE(a.getFunction("ThreadEventsBehaviour::onEnd") != NULL);
+	}
+
+	//insert more here
+	SECTION("time methods"){
+		REQUIRE(inst.loadLibraries());
+		vector <BPatch_function *> fs;
+		a.getUsefulFunctions(fs);
+
+		int mid = 1;
+		for (vector <BPatch_function *>::iterator it = fs.begin();
+				it != fs.end(); it++){
+			BPatch_function *f = *it;
+			//cout << mid << "/" << fs.size() << endl;
+			inst.timeFunction(f, mid++);
+
+		}
+
+		//REQUIRE(inst.insertThreadCalls());
+		//somehow check
+		l.launch();
 	}
 
 	//insert more here
 	SECTION("control pthreads"){
 		REQUIRE(inst.loadLibraries());
+		Controller c(&a, app);
+		c.listenThreads();
+
 		//REQUIRE(inst.insertThreadCalls());
 		//somehow check
 		l.launch();
