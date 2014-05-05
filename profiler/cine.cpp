@@ -31,12 +31,24 @@ int cine_thread_create(pthread_t *thread, const pthread_attr_t *attr,
 	return result;
 }
 
-void cine_on_create(){
-	cout << "Successful create call" << endl;
+int orig_start_thread(void * arg){
+	return 1;
 }
 
-void cine_on_exit(){
-	cout << "Successful exit call" << endl;
+void cine_start_thread(){
+	char n[50];
+	pthread_t thread = pthread_self();
+	pthread_getname_np(thread, n, sizeof(n));
+	cout << "Successful start call from " << n << endl;
+	threadEventsBehaviour->onStart((long) thread, n);
+}
+
+void cine_initial_thread(){
+	threadEventsBehaviour->onThreadMainStart(pthread_self());
+}
+
+void cine_exit_thread(){
+	threadEventsBehaviour->onEnd();
 }
 
 void cine_timer_entry(int id){

@@ -79,10 +79,10 @@ bool Launcher::setup(){
 		return false;
 	}
 
-//	if(!inst->insertThreadCalls()){
-//		cerr << "could not patch pthread" << endl;
-//		return false;
-//	}
+	if(!inst->insertThreadCalls()){
+		cerr << "could not patch pthread" << endl;
+		return false;
+	}
 
 	return true;
 }

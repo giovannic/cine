@@ -24,7 +24,11 @@ public:
     bool insertThreadCalls();
     bool loadLibraries();
     bool timeFunction(BPatch_function *f, int methodId);
+    bool instrumentThreadEntry(BPatch_thread *t);
+    bool instrumentThreadEntry(BPatch_process *p, BPatch_thread *t);
+    bool instrumentThreadEntry(Dyninst::Address a);
 private:
+    bool instrumentThreadEntry(BPatch_function *entryFunction);
     Analyser *analyser;
 	BPatch_addressSpace *app;
 };

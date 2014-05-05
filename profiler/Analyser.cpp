@@ -52,3 +52,6 @@ Analyser::Analyser(BPatch_image *img) {
 Analyser::~Analyser() {
 }
 
+BPatch_function* Analyser::findMethod(Dyninst::Address a) {
+	return img->findFunction(a);
+}
