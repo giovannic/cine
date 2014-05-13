@@ -24,8 +24,6 @@ Controller *ctrl;
 Process::cb_ret_t on_thread_create(Event::const_ptr ev) {
 
 	//cout << ev->getThread()->getStartFunction() << endl;
-
-	//BPatch_thread *t = ctrl->getEventThread(ev);
 	ctrl->registerThreadStart(ev->getEventNewUserThread()->getNewThread()->getStartFunction());
 	//get bpatch thread
 	//BPatch_thread *t = ctrl->getEventThread(ev);
@@ -42,9 +40,9 @@ Process::cb_ret_t on_thread_create(Event::const_ptr ev) {
 
 }
 
-Process::cb_ret_t on_thread_exit(Event::const_ptr ev) {
-
-	cout <<"listener exit " << ev->getEventUserThreadDestroy()->getThread()->getTID() << endl;
+Process::cb_ret_t cine_on_exit(Event::const_ptr ev) {
+	cout << "exited, getting results" << endl;
+	ctrl->getResults();
 	return Process::cbDefault;
 }
 

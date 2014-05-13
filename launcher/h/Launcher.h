@@ -17,6 +17,7 @@ class Launcher{
 public:
 
 	Launcher(string *input);
+	void listenResults();
 	virtual ~Launcher();
 	bool setup();
 	void launch();

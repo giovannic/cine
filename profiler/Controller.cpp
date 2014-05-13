@@ -40,12 +40,35 @@ void Controller::listenThreads(){
 //	Process::registerEventCallback(EventType::LWPDestroy, on_thread_exit);
 }
 
-Controller::Controller(Instrumenter *inst, BPatch_process *proc){
+Controller::Controller(Instrumenter *inst, Analyser *a, BPatch_process *proc){
 	ctrl = this;
 	this->proc = proc;
 	this->inst = inst;
+	this->analyser = a;
 }
 
 Controller::~Controller() {
 }
 
+void Controller::listenResults() {
+	Process::registerEventCallback(EventType::Terminate, cine_on_exit);
+}
+
+void Controller::getResults() {
+
+	//change to be nicer
+	BPatch_constExpr directory("/tmp");
+	BPatch_function *print = analyser->getFunction("VEX::printResults");
+
+	vector<BPatch_snippet *>args;
+	args.push_back(&directory);
+	BPatch_funcCallExpr printCall(*print, args);
+
+	bool err;
+	this->proc->oneTimeCode(printCall, &err);
+
+	if(err){
+		cerr << "some onetime code error on exit " << endl;
+	}
+
+}

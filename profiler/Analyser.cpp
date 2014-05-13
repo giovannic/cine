@@ -32,6 +32,16 @@ bool Analyser::getUsefulFunctions(vector<BPatch_function *> &fs){
 	return true;
 }
 
+
+vector<BPatch_function *>Analyser::getAllFunctions(string s){
+
+	vector<BPatch_function *> fs;
+	const char *sArg = s.c_str();
+	img->findFunction(sArg, fs);
+	return fs;
+
+}
+
 BPatch_function *Analyser::getFunction(string s){
 
 	vector<BPatch_function *> fs;
@@ -39,7 +49,9 @@ BPatch_function *Analyser::getFunction(string s){
 	img->findFunction(sArg, fs);
 	if (fs.size() != 1){
 		cerr << "[warning] " << fs.size() << " x " << s << endl;
-		return NULL;
+		if (fs.size() == 0){
+			return NULL;
+		}
 	}
 	return fs.front();
 

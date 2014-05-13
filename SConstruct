@@ -27,6 +27,8 @@ launcher_test_sources = ['ctests/launcher_test.cpp'] + supporting_sources
 test_env.Program('bin/launcher_test', launcher_test_sources)
 instrument_test_sources = ['ctests/instrument_test.cpp'] + supporting_sources
 test_env.Program('bin/instrument_test', instrument_test_sources)
+result_test_sources = ['ctests/result_test.cpp'] + supporting_sources
+test_env.Program('bin/result_test', result_test_sources)
 
 #libcine
 cine_env = Environment()

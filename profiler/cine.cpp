@@ -36,6 +36,7 @@ int orig_start_thread(void * arg){
 }
 
 void cine_start_thread(){
+	cout << "thread entered" << endl;
 	char n[50];
 	pthread_t thread = pthread_self();
 	pthread_getname_np(thread, n, sizeof(n));
@@ -48,6 +49,7 @@ void cine_initial_thread(){
 }
 
 void cine_exit_thread(){
+	cout << "thread exited" << endl;
 	threadEventsBehaviour->onEnd();
 }
 
@@ -59,3 +61,7 @@ void cine_timer_exit(int id){
 	methodEventsBehaviour->beforeMethodExit(id);
 }
 
+void cine_get_results(){
+	char *d = (char *)"/tmp";
+	printResults(d);
+}

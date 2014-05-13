@@ -18,9 +18,13 @@ using namespace Dyninst::SymtabAPI;
 Instrumenter::Instrumenter(Analyser *a, BPatch_addressSpace *as){
 	analyser = a;
 	app = as;
+	timers = new vector<BPatchSnippetHandle *>();
 	//cache function calls
 }
 
+Instrumenter::~Instrumenter(){
+	delete timers;
+}
 
 /*
  * until I can get find symbol to work pull this into analyser
@@ -75,26 +79,57 @@ bool Instrumenter::instrumentThreadEntry(BPatch_process*p, BPatch_thread *t){
 	}
 	return false;
 }
+
+bool Instrumenter::instrumentMain(){
+	BPatch_function * m = analyser->getFunction("main");
+	BPatch_function *cineCreate = analyser->getFunction("cine_initial_thread");
+	BPatch_function *cineDestroy = analyser->getFunction("cine_exit_thread");
+	return instrumentThreadEntry(m, cineCreate, cineDestroy);
+}
+
+
 bool Instrumenter::instrumentThreadEntry(BPatch_function *entryFunction){
+	BPatch_function *cineCreate = analyser->getFunction("cine_start_thread");
+	BPatch_function *cineDestroy = analyser->getFunction("cine_exit_thread");
+	return instrumentThreadEntry(entryFunction, cineCreate, cineDestroy);
+}
+
+//may not work - join, exit
+bool Instrumenter::instrumentThreadEntry(BPatch_function *entryFunction,
+		BPatch_function *start, BPatch_function *end){
 	vector<BPatch_point *> *entries = entryFunction->findPoint(BPatch_entry);
 	vector<BPatch_point *> *exits = entryFunction->findPoint(BPatch_exit);
 	if (entries->size() != 1){
 		cerr << "no entry point found (or too many)" << endl;
 	}
-	if (entries->front()->getCurrentSnippets().size() > 0){
-		//cannot time this method for the time being
-		return true; //already instrumented
+
+	vector<BPatchSnippetHandle *> snippets = entries->front()->getCurrentSnippets();
+	if (snippets.empty()){ //HACK: timing snippet
+		cout << snippets.size() << " snippets" << endl;
+		cout << snippets.front()->getFunc()->getName() << endl;
+		return true;
 	}
 
-	BPatch_function *cineCreate = analyser->getFunction("cine_start_thread");
-	BPatch_function *cineDestroy = analyser->getFunction("cine_exit_thread");
+//	for (vector<BPatchSnippetHandle *>::const_iterator si = snippets.begin();
+//			si != snippets.end(); si++){
+//		BPatchSnippetHandle *s = *si;
+//		cout << s->getFunc()->getName() << endl;
+//	}
+
+
 	vector<BPatch_snippet *>args;
-	BPatch_funcCallExpr entryCall(*cineCreate, args);
-	BPatch_funcCallExpr exitCall(*cineDestroy, args);
-	if(app->insertSnippet(entryCall, *entries) == NULL ||
-			app->insertSnippet(exitCall, *entries) == NULL ){
+	BPatch_funcCallExpr entryCall(*start, args);
+	BPatch_funcCallExpr exitCall(*end, args);
+
+	BPatchSnippetHandle *entrySnippet = app->insertSnippet(entryCall, *entries);
+
+	if(entrySnippet == NULL ||
+			app->insertSnippet(exitCall, *entries) == NULL){
 		cerr << "entry instrumentation failed" << endl;
+	} else {
+		timers->push_back(entrySnippet);
 	}
+
 	cout << "instrumented " << entryFunction->getName() << endl;
 
 	return true;//this can fail
@@ -102,21 +137,9 @@ bool Instrumenter::instrumentThreadEntry(BPatch_function *entryFunction){
 
 bool Instrumenter::insertThreadCalls(){
 
+	//doesn't work
 	BPatch_function *start = analyser->getFunction("start_thread");
 	return instrumentThreadEntry(start);
-
-//	BPatch_function *start = analyser->getFunction("start_thread");
-//	BPatch_function *cineCreate= analyser->getFunction("cine_start_thread");
-//	Module *symtab = convert(cineCreate->getModule());
-//
-//	Symbol *sym = findSymbol(symtab, "orig_start_thread");
-//
-//	if (sym == NULL){
-//		cerr << "no replacement functions found" << endl;
-//		return false;
-//	}
-//	app->wrapFunction(start, cineCreate, sym);
-//	return true;
 
 }
 

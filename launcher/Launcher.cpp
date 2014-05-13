@@ -62,6 +62,28 @@ BPatch_process *Launcher::createProcess(){
 	return app;
 }
 
+void getResults(BPatch_thread *thread, BPatch_exitType e) {
+	BPatch_constExpr directory("/tmp");
+	BPatch_process *p = thread->getProcess();
+	BPatch_function *print = Analyser(p->getImage()).getFunction("VEX::printResults");
+
+	vector<BPatch_snippet *>args;
+	args.push_back(&directory);
+	BPatch_funcCallExpr printCall(*print, args);
+
+	bool err;
+	p->oneTimeCode(printCall, &err);
+	p->continueExecution();
+
+	if(err){
+		cerr << "some onetime code error on exit " << endl;
+	}
+}
+
+void Launcher::listenResults(){
+	bpatch->registerExitCallback(getResults);
+}
+
 bool Launcher::setup(){
 
 	app = createProcess();
