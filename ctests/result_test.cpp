@@ -24,7 +24,7 @@ TEST_CASE( "Pthreads", "[instruments]" ) {
 	string threadfile = testpath + "/threads";
 	Launcher l(&threadfile);
 
-	BPatch_process *app = l.createProcess();
+	BPatch_addressSpace *app = l.openBinary();
 	REQUIRE(app != NULL);
 
 	Analyser a(app->getImage());
@@ -33,11 +33,11 @@ TEST_CASE( "Pthreads", "[instruments]" ) {
 //	SECTION("just methods and sequential threads"){
 		REQUIRE(inst.loadLibraries());
 		REQUIRE(inst.instrumentMain());
-		REQUIRE(inst.beginSimulator(app));
-		Controller c(&inst, &a, app);
-		c.listenThreads();
+		//REQUIRE(inst.beginSimulator(app));
+		//Controller c(&inst, &a, app);
+		//c.listenThreads();
 		//refactor
-		l.listenResults();
+		//l.listenResults();
 		vector <BPatch_function *> fs;
 		a.getUsefulFunctions(fs);
 

@@ -29,7 +29,10 @@ Launcher::Launcher(string *input){
 }
 
 Launcher::~Launcher(){
-	app->detach(false);
+	BPatch_process *proc = dynamic_cast<BPatch_process *>(app);
+	if (proc){
+		proc->detach(false);
+	}
 	delete input;
 	delete args;
 	delete bpatch;
@@ -42,9 +45,26 @@ void Launcher::add_arguments(string *args){
 }
 
 void Launcher::launch(){
-	app->continueExecution();
-	while (!app->isTerminated())
-		bpatch->waitForStatusChange();
+	BPatch_process *proc = dynamic_cast<BPatch_process *>(app);
+	//check if process
+	if (proc){
+		proc->continueExecution();
+		while (!proc->isTerminated())
+			bpatch->waitForStatusChange();
+	} else {
+		BPatch_binaryEdit *bin = dynamic_cast<BPatch_binaryEdit *>(app);
+		if(bin){
+			bin->writeFile("vexbin");
+		}
+	}
+}
+
+
+BPatch_addressSpace *Launcher::openBinary(){
+	char path[input->size()];
+	strcpy(path, input->c_str());
+	app = bpatch->openBinary(path);
+	return app;
 }
 
 BPatch_process *Launcher::createProcess(){
@@ -58,8 +78,9 @@ BPatch_process *Launcher::createProcess(){
 	char path[input->size()];
 	strcpy(path, input->c_str());
 
-	app = bpatch->processCreate(path, argv.data());
-	return app;
+	BPatch_process *proc = bpatch->processCreate(path, argv.data());
+	app = proc;
+	return proc;
 }
 
 void getResults(BPatch_thread *thread, BPatch_exitType e) {
@@ -96,10 +117,12 @@ bool Launcher::setup(){
 		return false;
 	}
 
+	/*
 	if(!inst->beginSimulator(app)){
 		cerr << "vex simulator failed to start" << endl;
 		return false;
 	}
+	*/
 
 	if(!inst->insertThreadCalls()){
 		cerr << "could not patch pthread" << endl;

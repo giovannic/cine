@@ -81,10 +81,17 @@ bool Instrumenter::instrumentThreadEntry(BPatch_process*p, BPatch_thread *t){
 }
 
 bool Instrumenter::instrumentMain(){
-	BPatch_function * m = analyser->getFunction("main");
+	vector<BPatch_function *> ms = analyser->getAllFunctions("main");
 	BPatch_function *cineCreate = analyser->getFunction("cine_initial_thread");
 	BPatch_function *cineDestroy = analyser->getFunction("cine_exit_thread");
-	return instrumentThreadEntry(m, cineCreate, cineDestroy);
+
+	bool success = true;
+	for (vector<BPatch_function *>::const_iterator m = ms.begin();
+			m != ms.end(); m++){
+		success = success && instrumentThreadEntry(*m, cineCreate, cineDestroy);
+	}
+
+	return success;
 }
 
 
@@ -103,17 +110,21 @@ bool Instrumenter::instrumentThreadEntry(BPatch_function *entryFunction,
 		cerr << "no entry point found (or too many)" << endl;
 	}
 
-	vector<BPatchSnippetHandle *> snippets = entries->front()->getCurrentSnippets();
-	if (snippets.empty()){ //HACK: timing snippet
-		cout << snippets.size() << " snippets" << endl;
-		cout << snippets.front()->getFunc()->getName() << endl;
-		return true;
-	}
+//	vector<BPatchSnippetHandle *> snippets = entries->front()->getCurrentSnippets();
+//	if (snippets.empty()){ //HACK: timing snippet
+//		cout << snippets.size() << " snippets" << endl;
+//		cout << snippets.front()->getFunc()->getName() << endl;
+//		return true;
+//	}
 
-//	for (vector<BPatchSnippetHandle *>::const_iterator si = snippets.begin();
-//			si != snippets.end(); si++){
+
+//	for (vector<BPatchSnippetHandle *>::const_iterator si = timers->begin();
+//			si != timers->end(); si++){
 //		BPatchSnippetHandle *s = *si;
 //		cout << s->getFunc()->getName() << endl;
+//		if(s->getFunc()->getName() == entryFunction->getName()){
+//			return true;
+//		}
 //	}
 
 

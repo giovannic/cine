@@ -23,6 +23,7 @@ public:
 	void launch();
 	void add_arguments(string *args);
 	BPatch_process *createProcess();
+	BPatch_addressSpace *openBinary();
 private:
 	string *input;
 	vector<string> *args;
@@ -31,7 +32,7 @@ private:
 	Analyser *analyser;
 
 	BPatch *bpatch;
-	BPatch_process *app;
+	BPatch_addressSpace *app;
 };
 
 #endif /* LAUNCHER_HPP_ */
