@@ -3,7 +3,7 @@ bin
 
 # Object files
 *.o
-*.so
+*.so*
 *.os
 
 # Executables
@@ -22,3 +22,7 @@ bin
 
 #scons
 .sconsign.dblite
+
+#static output
+vexbin
+

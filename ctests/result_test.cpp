@@ -32,8 +32,11 @@ TEST_CASE( "Pthreads", "[instruments]" ) {
 
 //	SECTION("just methods and sequential threads"){
 		REQUIRE(inst.loadLibraries());
-		REQUIRE(inst.instrumentMain());
+		//REQUIRE(inst.instrumentMain());
 		//REQUIRE(inst.beginSimulator(app));
+
+		REQUIRE(inst.insertThreadCalls());
+
 		//Controller c(&inst, &a, app);
 		//c.listenThreads();
 		//refactor

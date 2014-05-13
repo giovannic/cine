@@ -42,6 +42,17 @@ vector<BPatch_function *>Analyser::getAllFunctions(string s){
 
 }
 
+BPatch_function *Analyser::getStartThread(){
+	vector<BPatch_module *> *ms = img->getModules();
+	for (vector<BPatch_module *>::const_iterator mi = ms->begin();
+			mi != ms->end(); mi++){
+		char n[50];
+		(*mi)->getName(n, 50);
+		cout << n << endl;
+	}
+	return NULL;
+}
+
 BPatch_function *Analyser::getFunction(string s){
 
 	vector<BPatch_function *> fs;

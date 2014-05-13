@@ -81,17 +81,44 @@ bool Instrumenter::instrumentThreadEntry(BPatch_process*p, BPatch_thread *t){
 }
 
 bool Instrumenter::instrumentMain(){
-	vector<BPatch_function *> ms = analyser->getAllFunctions("main");
+
+	BPatch_function *entryFunction = analyser->getFunction("_start");
+
 	BPatch_function *cineCreate = analyser->getFunction("cine_initial_thread");
 	BPatch_function *cineDestroy = analyser->getFunction("cine_exit_thread");
 
-	bool success = true;
-	for (vector<BPatch_function *>::const_iterator m = ms.begin();
-			m != ms.end(); m++){
-		success = success && instrumentThreadEntry(*m, cineCreate, cineDestroy);
+	cout << entryFunction->findPoint(BPatch_exit)->front()->getAddress() << endl;
+	vector<BPatch_point *> *entries = entryFunction->findPoint(BPatch_entry);
+
+	vector<BPatch_snippet *>args;
+	BPatch_funcCallExpr entryCall(*cineCreate, args);
+
+	BPatchSnippetHandle *entrySnippet = app->insertSnippet(entryCall, *entries);
+
+	if(entrySnippet == NULL){
+		cerr << "entry instrumentation failed" << endl;
+	} else {
+		timers->push_back(entrySnippet);
 	}
 
-	return success;
+	cout << "instrumented " << entryFunction->getName() << endl;
+
+//	return instrumentThreadEntry(entryFunction, cineCreate, cineDestroy);
+
+//	vector<BPatch_function *> ms = analyser->getAllFunctions("main");
+//	BPatch_function *cineCreate = analyser->getFunction("cine_initial_thread");
+//	BPatch_function *cineDestroy = analyser->getFunction("cine_exit_thread");
+//
+//	bool success = true;
+//	for (vector<BPatch_function *>::const_iterator mi = ms.begin();
+//			mi != ms.end(); mi++){
+//		BPatch_function *m = *mi;
+//		cout << m->findPoint(BPatch_entry)->front()->getAddress() << endl;
+//		success = success && instrumentThreadEntry(m, cineCreate, cineDestroy);
+//	}
+//
+//	return success;
+
 }
 
 
@@ -150,7 +177,15 @@ bool Instrumenter::insertThreadCalls(){
 
 	//doesn't work
 	BPatch_function *start = analyser->getFunction("start_thread");
-	return instrumentThreadEntry(start);
+	vector<BPatch_point *> *exits = start->findPoint(BPatch_exit);
+	BPatch_function *cineCreate = analyser->getFunction("cine_start_thread");
+	vector<BPatch_snippet *>args;
+	BPatch_funcCallExpr createCall(*cineCreate, args);
+	if(app->insertSnippet(createCall, *exits) != NULL){
+		return true;
+	}
+	return false;
+//	return instrumentThreadEntry(start);
 
 }
 
@@ -208,6 +243,10 @@ bool Instrumenter::loadLibraries(){
 		return false;
 	}
 
+	if(!app->loadLibrary("libpthread.so.0")){
+		cerr << "target loading of pthread failed" << endl;
+		return false;
+	}
 	return true;
 
 }

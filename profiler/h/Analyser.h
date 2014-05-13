@@ -16,6 +16,7 @@ public:
 	virtual ~Analyser();
 	bool getUsefulFunctions(vector <BPatch_function *> &fs);
 	BPatch_function *getFunction(string s);
+	BPatch_function *getStartThread();
 	vector<BPatch_function *>getAllFunctions(string s);
     BPatch_function *findMethod(Dyninst::Address a);
 private:
