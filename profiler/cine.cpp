@@ -45,6 +45,7 @@ void cine_start_thread(){
 }
 
 void cine_initial_thread(){
+	cout << "init thread " << endl;
 	threadEventsBehaviour->onThreadMainStart(pthread_self());
 }
 

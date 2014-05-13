@@ -103,19 +103,15 @@ bool Instrumenter::instrumentThreadEntry(BPatch_function *entryFunction,
 		cerr << "no entry point found (or too many)" << endl;
 	}
 
-	vector<BPatchSnippetHandle *> snippets = entries->front()->getCurrentSnippets();
-	if (snippets.empty()){ //HACK: timing snippet
-		cout << snippets.size() << " snippets" << endl;
-		cout << snippets.front()->getFunc()->getName() << endl;
-		return true;
+
+	//check that we're not already timing
+	for (vector<BPatchSnippetHandle *>::const_iterator si = timers->begin();
+			si != timers->end(); si++){
+		BPatchSnippetHandle *s = *si;
+		if (s->getFunc()->getName() == entryFunction->getName()){
+			return true;
+		}
 	}
-
-//	for (vector<BPatchSnippetHandle *>::const_iterator si = snippets.begin();
-//			si != snippets.end(); si++){
-//		BPatchSnippetHandle *s = *si;
-//		cout << s->getFunc()->getName() << endl;
-//	}
-
 
 	vector<BPatch_snippet *>args;
 	BPatch_funcCallExpr entryCall(*start, args);
@@ -166,20 +162,30 @@ bool Instrumenter::beginSimulator(BPatch_process *p){
 	BPatch_nullExpr null;
 	args.push_back(&null);
 	BPatch_funcCallExpr initCall(*init, args);
-	void * success = p->oneTimeCode(initCall);
+	bool err;
+	void * success = p->oneTimeCode(initCall, &err);
 
-	vector<BPatch_thread *>ts;
-	p->getThreads(ts);
+	if(err){
+		cerr << " did not initialise " << endl;
+	}
+
+//	vector<BPatch_thread *>ts;
+//	p->getThreads(ts);
 
 	//blocks for some reason
 //	BPatch_function * initThread = analyser->getFunction("ThreadEventsBehaviour::onThreadMainStart");
-//	BPatch_function * initThread = analyser->getFunction("cine_initial_thread");
-//	vector<BPatch_snippet *> tArgs;
+	BPatch_function * initThread = analyser->getFunction("cine_initial_thread");
+	vector<BPatch_snippet *> tArgs;
 
 //	BPatch_threadIndexExpr tid;
 //	tArgs.push_back(&tid);
 
-//	BPatch_funcCallExpr initThreadCall(*initThread, tArgs);
+	BPatch_funcCallExpr initThreadCall(*initThread, tArgs);
+
+	p->oneTimeCode(initThreadCall, &err);
+	if(err){
+		cerr << " did not notify of main thread " << endl;
+	}
 //
 //	ts.front()->oneTimeCode(initThreadCall);
 	return (bool)(long) success;

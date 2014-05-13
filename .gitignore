@@ -22,3 +22,6 @@ bin
 
 #scons
 .sconsign.dblite
+
+#output
+vexbin

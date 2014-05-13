@@ -72,6 +72,7 @@ void getResults(BPatch_thread *thread, BPatch_exitType e) {
 	BPatch_funcCallExpr printCall(*print, args);
 
 	bool err;
+	p->stopExecution();//this is silly
 	p->oneTimeCode(printCall, &err);
 	p->continueExecution();
 
