@@ -3,7 +3,7 @@ bin
 
 # Object files
 *.o
-*.so
+*.so*
 *.os
 
 # Executables
