@@ -17,11 +17,11 @@
 
 using namespace std;
 
-TEST_CASE( "Pthreads", "[instruments]" ) {
+TEST_CASE( "simple threads", "[instruments]" ) {
 
 	//basic
 	string testpath(BIN_PATH);
-	string threadfile = testpath + "/threads";
+	string threadfile = testpath + "/mutexthreads";
 	Launcher l(&threadfile);
 
 	BPatch_process *app = l.createProcess();
@@ -34,10 +34,13 @@ TEST_CASE( "Pthreads", "[instruments]" ) {
 		REQUIRE(inst.loadLibraries());
 		//REQUIRE(inst.instrumentMain());
 		REQUIRE(inst.beginSimulator(app));
+		REQUIRE(inst.insertThreadCalls());
+		REQUIRE(inst.instrumentExit());
+
 		Controller c(&inst, &a, app);
 		c.listenThreads();
 		//refactor
-		l.listenResults();
+//		l.listenResults();
 		vector <BPatch_function *> fs;
 		a.getUsefulFunctions(fs);
 
@@ -50,7 +53,48 @@ TEST_CASE( "Pthreads", "[instruments]" ) {
 
 		//REQUIRE(inst.insertThreadCalls());
 		//somehow check
-		l.launch();
+//		l.launch();
 //	}
 
 }
+
+//TEST_CASE( "mutex threads", "[instruments]" ) {
+//
+//	//basic
+//	string testpath(BIN_PATH);
+//	string threadfile = testpath + "/mutexthreads";
+//	Launcher l(&threadfile);
+//
+//	BPatch_process *app = l.createProcess();
+//	REQUIRE(app != NULL);
+//
+//	Analyser a(app->getImage());
+//	Instrumenter inst(&a, app->getImage()->getAddressSpace());
+//
+////	SECTION("just methods and sequential threads"){
+//		REQUIRE(inst.loadLibraries());
+//		//REQUIRE(inst.instrumentMain());
+//		REQUIRE(inst.beginSimulator(app));
+//		REQUIRE(inst.insertThreadCalls());
+//		REQUIRE(inst.instrumentExit());
+//
+//		Controller c(&inst, &a, app);
+//		c.listenThreads();
+//		//refactor
+////		l.listenResults();
+//		vector <BPatch_function *> fs;
+//		a.getUsefulFunctions(fs);
+//
+//		int mid = 1;
+//		for (vector <BPatch_function *>::iterator it = fs.begin();
+//				it != fs.end(); it++){
+//			BPatch_function *f = *it;
+//			inst.timeFunction(f, mid++);
+//		}
+//
+//		//REQUIRE(inst.insertThreadCalls());
+//		//somehow check
+//		l.launch();
+////	}
+//
+//}

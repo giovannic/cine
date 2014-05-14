@@ -26,9 +26,11 @@ public:
     bool loadLibraries();
     bool timeFunction(BPatch_function *f, int methodId);
     bool instrumentThreadEntry(BPatch_thread *t);
+    bool instrumentCreation();
     bool instrumentMain();
     bool instrumentThreadEntry(BPatch_process *p, BPatch_thread *t);
     bool instrumentThreadEntry(Dyninst::Address a);
+    bool instrumentExit();
 private:
     bool instrumentThreadEntry(BPatch_function *entryFunction);
     bool instrumentThreadEntry(BPatch_function *entryFunction,
