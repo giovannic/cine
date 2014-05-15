@@ -23,6 +23,8 @@ bin
 #scons
 .sconsign.dblite
 
-#static output
+#output
 vexbin
-
+vtf*
+state_transitions.*
+.vex_delays

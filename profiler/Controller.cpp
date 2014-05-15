@@ -58,14 +58,18 @@ void Controller::getResults() {
 
 	//change to be nicer
 	BPatch_constExpr directory("/tmp");
-	BPatch_function *print = analyser->getFunction("VEX::printResults");
+	BPatch_function *print = analyser->getFunction("cine_get_results");
 
 	vector<BPatch_snippet *>args;
 	args.push_back(&directory);
 	BPatch_funcCallExpr printCall(*print, args);
 
 	bool err;
+	cout << "in" << endl;
 	this->proc->oneTimeCode(printCall, &err);
+	cout << "out" << endl;
+
+	this->proc->continueExecution();
 
 	if(err){
 		cerr << "some onetime code error on exit " << endl;
