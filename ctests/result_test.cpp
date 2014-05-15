@@ -41,19 +41,9 @@ TEST_CASE( "simple threads", "[instruments]" ) {
 		c.listenThreads();
 		//refactor
 //		l.listenResults();
-		vector <BPatch_function *> fs;
-		a.getUsefulFunctions(fs);
 
-		int mid = 1;
-		for (vector <BPatch_function *>::iterator it = fs.begin();
-				it != fs.end(); it++){
-			BPatch_function *f = *it;
-			inst.timeFunction(f, mid++);
-		}
-
-		//REQUIRE(inst.insertThreadCalls());
 		//somehow check
-//		l.launch();
+		l.launch();
 //	}
 
 }

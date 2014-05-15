@@ -163,15 +163,31 @@ bool Instrumenter::insertThreadCalls(){
 		return false;
 	}
 
-	//exit
-	BPatch_function *cineExit = analyser->getFunction("cine_exit_thread");
-	BPatch_function *pthreadExit = analyser->getFunction("pthread_exit");
-	vector<BPatch_point *> *entries = pthreadExit->findPoint(BPatch_entry);
-	vector<BPatch_snippet *> args;
-	BPatch_funcCallExpr exitCall(*cineExit, args);
-	if (!app->insertSnippet(exitCall, *entries)){
-		return false;
+	//join
+	BPatch_function *pthreadJoin = analyser->getFunction("pthread_join");
+	if(pthreadJoin){
+        BPatch_function *cineJoin = analyser->getFunction("cine_join_thread");
+        vector<BPatch_point *> *entries = pthreadJoin->findPoint(BPatch_entry);
+        vector<BPatch_snippet *> args;
+        BPatch_funcCallExpr joinCall(*cineJoin, args);
+        if (!app->insertSnippet(joinCall, *entries)){
+                return false;
+        }
 	}
+
+
+	//exit
+	BPatch_function *pthreadExit = analyser->getFunction("pthread_exit");
+	if(pthreadExit != NULL){
+		BPatch_function *cineExit = analyser->getFunction("cine_exit_thread");
+		vector<BPatch_point *> *entries = pthreadExit->findPoint(BPatch_entry);
+		vector<BPatch_snippet *> args;
+		BPatch_funcCallExpr exitCall(*cineExit, args);
+		if (!app->insertSnippet(exitCall, *entries)){
+			return false;
+		}
+	}
+
 
 	return true;
 
@@ -197,6 +213,18 @@ bool Instrumenter::timeFunction(BPatch_function *f, int methodId){
 	vector<BPatch_snippet *>args;
 	BPatch_constExpr mid(methodId);
 	args.push_back(&mid);
+
+	//if you pthread_exit before the end
+	vector<BPatch_point *> calls;
+	f->getCallPoints(calls);
+	for(vector<BPatch_point *>::const_iterator c = calls.begin();
+			c != calls.end(); c++){
+		BPatch_point *cp = *c;
+		BPatch_function *callee = cp->getCalledFunction();
+		if(callee != NULL && callee->getName() == "pthread_exit"){
+			exits->push_back(cp);
+		}
+	}
 
 	BPatch_funcCallExpr timerStartCall(*timerStart, args);
 	BPatch_funcCallExpr timerStopCall(*timerStop, args);

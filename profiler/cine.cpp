@@ -16,7 +16,7 @@
 using namespace std;
 using namespace VEX;
 
-pthread_t m;
+long thread_count = 0;
 
 int orig_thread_create(pthread_t *thread, const pthread_attr_t *attr,
 	                          void *(*start_routine) (void *), void *arg){
@@ -49,34 +49,44 @@ void cine_start_thread(){
 	pthread_getname_np(thread, n, sizeof(n));
 	threadEventsBehaviour->afterCreatingThread();
 	threadEventsBehaviour->onStart((long) thread, n);
+	thread_count++;
 //	cout << "after " << pthread_self() << " [" <<  n << "]" << endl;
 }
 
 void cine_initial_thread(){
 	pthread_t t = pthread_self();
-	m = t;
 	threadEventsBehaviour->beforeCreatingThread((long) t);
 	threadEventsBehaviour->afterCreatingThread();
 	threadEventsBehaviour->onThreadMainStart((long) pthread_self());
+	thread_count++;
 	cout << "init thread " << pthread_self() << endl;
 }
 
-void cine_exit_thread(){
-	cout << "thread exited " << pthread_self() << endl;
-	threadEventsBehaviour->onEnd();
-}
-
 void cine_timer_entry(int id){
+	cout << "entry " << id << endl;
 	methodEventsBehaviour->afterMethodEntry(id);
 }
 
 void cine_timer_exit(int id){
+	cout << "exit " << id << endl;
 	methodEventsBehaviour->beforeMethodExit(id);
 }
 
 void cine_get_results(){
 	endSimulator();
-	return;
+}
+
+void cine_join_thread(){
+	threadEventsBehaviour->onJoin((long) pthread_self());
+}
+
+void cine_exit_thread(){
+	threadEventsBehaviour->onEnd();
+	cout << "thread exited" << endl;
+	thread_count--;
+	if (!thread_count){
+		cine_get_results();
+	}
 }
 
 void cine_method_registration(char *name, int mid){
