@@ -80,7 +80,7 @@ bool Instrumenter::instrumentThreadEntry(BPatch_process*p, BPatch_thread *t){
 	return false;
 }
 
-bool Instrumenter::instrumentMain(){
+bool Instrumenter::trackMainThread(){
 
 	BPatch_function *entryFunction = analyser->getFunction("_start");
 
@@ -137,25 +137,6 @@ bool Instrumenter::instrumentThreadEntry(BPatch_function *entryFunction,
 		cerr << "no entry point found (or too many)" << endl;
 	}
 
-<<<<<<< HEAD
-//	vector<BPatchSnippetHandle *> snippets = entries->front()->getCurrentSnippets();
-//	if (snippets.empty()){ //HACK: timing snippet
-//		cout << snippets.size() << " snippets" << endl;
-//		cout << snippets.front()->getFunc()->getName() << endl;
-//		return true;
-//	}
-
-
-//	for (vector<BPatchSnippetHandle *>::const_iterator si = timers->begin();
-//			si != timers->end(); si++){
-//		BPatchSnippetHandle *s = *si;
-//		cout << s->getFunc()->getName() << endl;
-//		if(s->getFunc()->getName() == entryFunction->getName()){
-//			return true;
-//		}
-//	}
-=======
->>>>>>> vexcall
 
 	//check that we're not already tracking
 	for (vector<BPatchSnippetHandle *>::const_iterator si = timers->begin();
@@ -187,8 +168,21 @@ bool Instrumenter::instrumentThreadEntry(BPatch_function *entryFunction,
 
 bool Instrumenter::insertThreadCalls(){
 	//doesn't work
-//	BPatch_function *start = analyser->getFunction("start_thread");
-//	return instrumentThreadEntry(start);
+	BPatch_function *start = analyser->getFunction("start_thread");
+	vector<BPatch_point *> possible;
+
+	start->getCallPoints(possible);
+	for (vector<BPatch_point *>::const_iterator pi = possible.begin();
+			pi != possible.end(); pi++){
+		BPatch_point *callSite = *pi;
+		if(callSite->isDynamic()){
+			//this is as good as guess as any
+			BPatch_function *cineStart = analyser->getFunction("cine_start_thread");
+			vector<BPatch_snippet *> args;
+			BPatch_funcCallExpr startCall(*cineStart, args);
+			app->insertSnippet(startCall, *callSite);
+		}
+	}
 
 	BPatch_function *create = analyser->getFunction("pthread_create");
 //	BPatch_function *beforeCreate = analyser->getFunction("cine_before_create");
@@ -286,18 +280,17 @@ bool Instrumenter::timeFunction(BPatch_function *f, int methodId){
 	return true;
 }
 
-bool Instrumenter::beginSimulator(BPatch_process *p){
+bool Instrumenter::initCalls(){
+
 	//generate a call to VEX::initializeSimulator(NULL)
+	BPatch_function * programStart = analyser->getFunction("main");
+	vector<BPatch_point *> *startPoint = programStart->findPoint(BPatch_entry);
 	BPatch_function * init = analyser->getFunction("VEX::initializeSimulator");
 	vector<BPatch_snippet *> args;
-	BPatch_nullExpr null;
-	args.push_back(&null);
 	BPatch_funcCallExpr initCall(*init, args);
-	bool err;
-	void * success = p->oneTimeCode(initCall, &err);
 
-	if(err){
-		cerr << " did not initialise " << endl;
+	if(app->insertSnippet(initCall, *startPoint) == NULL){
+		return false;
 	}
 
 	//register methods
@@ -308,20 +301,36 @@ bool Instrumenter::beginSimulator(BPatch_process *p){
 	for(vector<BPatch_function *>::const_iterator mi = ms.begin();
 			mi != ms.end(); mi++){
 		BPatch_function *f = *mi;
-		vector<BPatch_snippet *> args;
+		vector<BPatch_snippet *> margs;
 		const char *n = f->getName().c_str();
 		BPatch_constExpr name(n);
-		args.push_back(&name);
+		margs.push_back(&name);
 		BPatch_constExpr id(mid);
-		args.push_back(&id);
+		margs.push_back(&id);
 
 		BPatch_funcCallExpr regCall(*reg, args);
-		p->oneTimeCode(regCall, &err);
+		if(app->insertSnippet(regCall, *startPoint, BPatch_lastSnippet) == NULL){
+			cerr << "method missed " << n << endl;
+		}
 
 		timeFunction(f, mid);
 		mid++;
 	}
 
+	BPatch_function * threadInit = analyser->getFunction("cine_initial_thread");
+	vector<BPatch_snippet *> targs;
+	BPatch_nullExpr null;
+	targs.push_back(&null);
+	BPatch_funcCallExpr threadInitCall(*threadInit, targs);
+
+	if(app->insertSnippet(threadInitCall, *startPoint, BPatch_lastSnippet) == NULL){
+		return false;
+	}
+
+	return true;
+
+
+	/*
 //	vector<BPatch_thread *>ts;
 //	p->getThreads(ts);
 
@@ -342,6 +351,7 @@ bool Instrumenter::beginSimulator(BPatch_process *p){
 //
 //	ts.front()->oneTimeCode(initThreadCall);
 	return (bool)(long) success;
+	*/
 }
 
 bool Instrumenter::loadLibraries(){
@@ -371,7 +381,17 @@ bool Instrumenter::instrumentCreation() {
 
 bool Instrumenter::instrumentExit() {
 	BPatch_function *exit = analyser->getFunction("exit");
-	vector<BPatch_point *> *entries = exit->findPoint(BPatch_entry);
+	vector<BPatch_point *> *exitPoints;
+	if (exit == NULL){
+		//try end of main
+		exit = analyser->getFunction("main");
+		if (exit == NULL){
+			return false;
+		}
+		exitPoints = exit->findPoint(BPatch_exit);
+	} else {
+		exitPoints = exit->findPoint(BPatch_entry);
+	}
 
 	vector<BPatch_snippet *>args;
 
@@ -382,13 +402,13 @@ bool Instrumenter::instrumentExit() {
 
 	BPatchSnippetHandle *entrySnippet;
 
-	entrySnippet = app->insertSnippet(exitCall, *entries);
+	entrySnippet = app->insertSnippet(exitCall, *exitPoints);
 
 	if (entrySnippet == NULL){
 		return false;
 	}
 
-	entrySnippet = app->insertSnippet(cleanupCall, *entries, BPatch_lastSnippet);
+	entrySnippet = app->insertSnippet(cleanupCall, *exitPoints, BPatch_lastSnippet);
 
 	return entrySnippet != NULL;
 }

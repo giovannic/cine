@@ -45,18 +45,8 @@ void Launcher::add_arguments(string *args){
 }
 
 void Launcher::launch(){
-	BPatch_process *proc = dynamic_cast<BPatch_process *>(app);
-	//check if process
-	if (proc){
-		proc->continueExecution();
-		while (!proc->isTerminated())
-			bpatch->waitForStatusChange();
-	} else {
-		BPatch_binaryEdit *bin = dynamic_cast<BPatch_binaryEdit *>(app);
-		if(bin){
-			bin->writeFile("vexbin");
-		}
-	}
+	BPatch_binaryEdit *bin = dynamic_cast<BPatch_binaryEdit *>(app);
+	bin->writeFile("vexbin");
 }
 
 

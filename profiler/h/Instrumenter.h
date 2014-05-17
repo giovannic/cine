@@ -21,13 +21,13 @@ class Instrumenter {
 public:
 	Instrumenter(Analyser *a, BPatch_addressSpace *as);
 	~Instrumenter();
-	bool beginSimulator(BPatch_process *p);
+	bool initCalls();
     bool insertThreadCalls();
     bool loadLibraries();
     bool timeFunction(BPatch_function *f, int methodId);
     bool instrumentThreadEntry(BPatch_thread *t);
     bool instrumentCreation();
-    bool instrumentMain();
+    bool trackMainThread();
     bool instrumentThreadEntry(BPatch_process *p, BPatch_thread *t);
     bool instrumentThreadEntry(Dyninst::Address a);
     bool instrumentExit();

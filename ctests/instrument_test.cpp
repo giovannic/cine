@@ -74,7 +74,7 @@ TEST_CASE( "Pthreads", "[instruments]" ) {
 	//insert more here
 	SECTION("control pthreads"){
 		REQUIRE(inst.loadLibraries());
-		REQUIRE(inst.beginSimulator(app));
+		REQUIRE(inst.initCalls());
 		//REQUIRE(inst.instrumentContention());
 
 		Controller c(&inst, &a, app);

@@ -34,12 +34,11 @@ TEST_CASE( "simple threads", "[instruments]" ) {
 		REQUIRE(inst.loadLibraries());
 		//REQUIRE(inst.instrumentMain());
 
-		REQUIRE(inst.beginSimulator(app));
-		REQUIRE(inst.insertThreadCalls());
+		REQUIRE(inst.initCalls());
+//		REQUIRE(inst.insertThreadCalls());
 		REQUIRE(inst.instrumentExit());
-
-		Controller c(&inst, &a, app);
-		c.listenThreads();
+//		Controller c(&inst, &a, app);
+//		c.listenThreads();
 		//refactor
 //		l.listenResults();
 
