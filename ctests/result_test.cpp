@@ -22,9 +22,11 @@ TEST_CASE( "simple threads", "[instruments]" ) {
 	//basic
 	string testpath(BIN_PATH);
 	string threadfile = testpath + "/mutexthreads";
-	Launcher l(&threadfile);
+	BPatch *bpatch = new BPatch();
 
-	BPatch_addressSpace *app = l.openBinary();
+	//pull out into a primer
+	const char *f = threadfile.c_str();
+	BPatch_binaryEdit *app = bpatch->openBinary(f);
 	REQUIRE(app != NULL);
 
 	Analyser a(app->getImage());
@@ -35,15 +37,12 @@ TEST_CASE( "simple threads", "[instruments]" ) {
 		//REQUIRE(inst.instrumentMain());
 
 		REQUIRE(inst.initCalls());
-//		REQUIRE(inst.insertThreadCalls());
-		REQUIRE(inst.instrumentExit());
+		REQUIRE(inst.insertThreadCalls());
+//		REQUIRE(inst.instrumentExit());
 //		Controller c(&inst, &a, app);
 //		c.listenThreads();
 		//refactor
-//		l.listenResults();
 
-		//somehow check
-		l.launch();
 //	}
 
 }

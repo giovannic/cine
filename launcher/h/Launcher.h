@@ -13,18 +13,19 @@
 
 using namespace std;
 
+//needs to be refactored to a static and dynamic loader
 class Launcher{
 public:
 
-	Launcher(string *input);
-	void listenResults();
+	Launcher(string &input);
 	virtual ~Launcher();
-	bool setup();
-	void launch();
-	void add_arguments(string *args);
-	BPatch_process *createProcess();
-	BPatch_addressSpace *openBinary();
+	bool launch();
+	void add_arguments(string &args);
 private:
+	bool setup();
+	void listenResults();
+	BPatch_process *createProcess();
+	BPatch_binaryEdit *openBinary();
 	string *input;
 	vector<string> *args;
 
@@ -33,6 +34,7 @@ private:
 
 	BPatch *bpatch;
 	BPatch_addressSpace *app;
+	BPatch_binaryEdit *bin;
 };
 
 #endif /* LAUNCHER_HPP_ */

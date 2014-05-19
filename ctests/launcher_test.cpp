@@ -20,25 +20,21 @@ TEST_CASE( "Create process", "[loader]" ) {
 		//basic
 		string testpath(BIN_PATH);
 		string threadfile = testpath + "/threads";
-		Launcher l(&threadfile);
+		Launcher l(threadfile);
 
-		BPatch_process *app = l.createProcess();
-		REQUIRE(app != NULL);
-		l.launch(); //no errors
+		REQUIRE(l.launch()); //no errors
 	}
 
 	//some kind of thread problem
 	SECTION("with arguments"){
 
-		string echo = "/bin/echo";
-		string args = "hello world";
+		string echo("/bin/echo");
+		string args("hello world");
 
-		Launcher l(&echo);
-		l.add_arguments(&args);
+		Launcher l(echo);
+		l.add_arguments(args);
 
-		BPatch_process *app = l.createProcess();
-		REQUIRE(app != NULL);
-		l.launch(); //no errors
+		REQUIRE(l.launch()); //no errors
 
 	}
 

@@ -30,7 +30,7 @@ int cine_thread_create(pthread_t *thread, const pthread_attr_t *attr,
 	//TODO: locking?
 	if (!result){
 		threadEventsBehaviour->beforeCreatingThread((long) *thread);
-//		cout << "before " << *thread << endl;
+		cout << "before " << *thread << endl;
 	}
 	return result;
 }
@@ -40,25 +40,24 @@ int cine_thread_create(pthread_t *thread, const pthread_attr_t *attr,
 void cine_before_create(pthread_t *t){
 	//may not be correct
 	threadEventsBehaviour->beforeCreatingThread((long) *t);
-	cout << "before " << *t << endl;
 }
 
 void cine_start_thread(){
 	char n[50];
 	pthread_t thread = pthread_self();
 	pthread_getname_np(thread, n, sizeof(n));
+	cout << "after " << pthread_self() << " [" <<  n << "]" << endl;
 	threadEventsBehaviour->afterCreatingThread();
 	threadEventsBehaviour->onStart((long) thread, n);
 	thread_count++;
-//	cout << "after " << pthread_self() << " [" <<  n << "]" << endl;
+	cout << "-after " << pthread_self() << " [" <<  n << "]" << "# " << thread_count << endl;
 }
 
 void cine_initial_thread(){
+	cout << "init thread" << endl;
 	pthread_t t = pthread_self();
 	threadEventsBehaviour->beforeCreatingThread((long) t);
-	threadEventsBehaviour->afterCreatingThread();
-	threadEventsBehaviour->onThreadMainStart((long) pthread_self());
-	thread_count++;
+	cine_start_thread();
 	cout << "init thread " << pthread_self() << endl;
 }
 
@@ -73,22 +72,26 @@ void cine_timer_exit(int id){
 }
 
 void cine_get_results(){
+	cout << "ending" << endl;
 	endSimulator();
 }
 
 void cine_join_thread(){
-	threadEventsBehaviour->onJoin((long) pthread_self());
+	cout << "join" << endl;
+	//to be debugged
+//	threadEventsBehaviour->onJoin((long) pthread_self());
 }
 
 void cine_exit_thread(){
 	threadEventsBehaviour->onEnd();
-	cout << "thread exited" << endl;
 	thread_count--;
+	cout << "thread exited " << pthread_self() << " left: " << thread_count << endl;
 	if (!thread_count){
 		cine_get_results();
 	}
 }
 
 void cine_method_registration(char *name, int mid){
+	cout << "registering " << mid << endl;
 	eventLogger->registerMethod(name, mid);
 }

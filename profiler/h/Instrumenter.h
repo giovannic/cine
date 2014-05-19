@@ -26,7 +26,6 @@ public:
     bool loadLibraries();
     bool timeFunction(BPatch_function *f, int methodId);
     bool instrumentThreadEntry(BPatch_thread *t);
-    bool instrumentCreation();
     bool trackMainThread();
     bool instrumentThreadEntry(BPatch_process *p, BPatch_thread *t);
     bool instrumentThreadEntry(Dyninst::Address a);
@@ -35,6 +34,10 @@ private:
     bool instrumentThreadEntry(BPatch_function *entryFunction);
     bool instrumentThreadEntry(BPatch_function *entryFunction,
     		BPatch_function *start, BPatch_function *end);
+    bool threadStart();
+    bool threadCreation();
+    bool threadJoin();
+    bool threadExit();
     Analyser *analyser;
 	BPatch_addressSpace *app;
 	vector<BPatchSnippetHandle *> *timers;

@@ -22,9 +22,10 @@ TEST_CASE( "Pthreads", "[instruments]" ) {
 	//basic
 	string testpath(BIN_PATH);
 	string threadfile = testpath + "/threads";
-	Launcher l(&threadfile);
+	BPatch *bpatch = new BPatch();
 
-	BPatch_process *app = l.createProcess();
+	const char *f = threadfile.c_str();
+	BPatch_binaryEdit *app = bpatch->openBinary(f);
 	REQUIRE(app != NULL);
 
 	Analyser a(app->getImage());
@@ -68,7 +69,6 @@ TEST_CASE( "Pthreads", "[instruments]" ) {
 
 		//REQUIRE(inst.insertThreadCalls());
 		//somehow check
-		l.launch();
 	}
 
 	//insert more here
@@ -77,13 +77,11 @@ TEST_CASE( "Pthreads", "[instruments]" ) {
 		REQUIRE(inst.initCalls());
 		//REQUIRE(inst.instrumentContention());
 
-		Controller c(&inst, &a, app);
-		c.listenThreads();
-
 		//REQUIRE(inst.insertThreadCalls());
 		//somehow check
-		l.launch();
 	}
+
+	delete bpatch;
 
 
 }

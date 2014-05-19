@@ -21,11 +21,12 @@ using namespace std;
 using namespace Dyninst;
 
 
-Launcher::Launcher(string *input){
-	this->input = new string(*input);
+Launcher::Launcher(string &input){
+	this->input = new string(input);
 	this->args = new vector<string>();
-	this->args->push_back(*input);
+	this->args->push_back(input);
 	bpatch = new BPatch();
+	setup();
 }
 
 Launcher::~Launcher(){
@@ -38,23 +39,22 @@ Launcher::~Launcher(){
 	delete bpatch;
 }
 
-void Launcher::add_arguments(string *args){
+void Launcher::add_arguments(string &args){
 	//TODO parse arguments
 	//there can only be one
-	this->args->push_back(*args);
+	this->args->push_back(args);
 }
 
-void Launcher::launch(){
+bool Launcher::launch(){
 	BPatch_binaryEdit *bin = dynamic_cast<BPatch_binaryEdit *>(app);
-	bin->writeFile("vexbin");
+	return bin->writeFile("vexbin");
 }
 
 
-BPatch_addressSpace *Launcher::openBinary(){
+BPatch_binaryEdit *Launcher::openBinary(){
 	char path[input->size()];
 	strcpy(path, input->c_str());
-	app = bpatch->openBinary(path);
-	return app;
+	return bpatch->openBinary(path);
 }
 
 BPatch_process *Launcher::createProcess(){
@@ -98,10 +98,10 @@ void Launcher::listenResults(){
 
 bool Launcher::setup(){
 
-	app = createProcess();
+	bin = openBinary();
 
-	analyser = new Analyser(app->getImage());
-	inst = new Instrumenter(analyser, app->getImage()->getAddressSpace());
+	analyser = new Analyser(bin->getImage());
+	inst = new Instrumenter(analyser, bin->getImage()->getAddressSpace());
 
 	if(!inst->loadLibraries()){
 		cerr << "libraries did not load" << endl;

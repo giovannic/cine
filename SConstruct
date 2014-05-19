@@ -24,11 +24,14 @@ test_env.Append(CPPDEFINES={'BIN_PATH': bins})
 
 supporting_sources = ['launcher/Launcher.cpp', 'profiler/Instrumenter.cpp', 'profiler/Controller.cpp', 'profiler/Analyser.cpp']
 launcher_test_sources = ['ctests/launcher_test.cpp'] + supporting_sources
-test_env.Program('bin/launcher_test', launcher_test_sources)
+test_env.Program('bin/tests/launcher_test', launcher_test_sources)
 instrument_test_sources = ['ctests/instrument_test.cpp'] + supporting_sources
-test_env.Program('bin/instrument_test', instrument_test_sources)
+test_env.Program('bin/tests/instrument_test', instrument_test_sources)
 result_test_sources = ['ctests/result_test.cpp'] + supporting_sources
-test_env.Program('bin/result_test', result_test_sources)
+test_env.Program('bin/tests/result_test', result_test_sources)
+
+main_sources = ['launcher/main.cpp'] + supporting_sources
+test_env.Program('bin/cine', main_sources)
 
 #libcine
 cine_env = Environment()
