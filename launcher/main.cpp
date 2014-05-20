@@ -5,12 +5,12 @@
  *      Author: giovanni
  */
 
-#include"Launcher.h"
+#include"StaticLauncher.h"
 #include <stdlib.h>
 
 int main(int argc, char* argv[]) {
 	//TODO: validate and add program arguments
 	string input(argv[1]);
-	Launcher(input).launch();
+	StaticLauncher(input).launch();
 	exit(0);
 }

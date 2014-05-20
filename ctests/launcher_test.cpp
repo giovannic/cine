@@ -7,7 +7,7 @@
 
 #define CATCH_CONFIG_MAIN
 #include "catch.hpp"
-#include "Launcher.h"
+#include "StaticLauncher.h"
 #include <unistd.h>
 #include <iostream>
 #include <sstream>
@@ -20,7 +20,7 @@ TEST_CASE( "Create process", "[loader]" ) {
 		//basic
 		string testpath(BIN_PATH);
 		string threadfile = testpath + "/threads";
-		Launcher l(threadfile);
+		StaticLauncher l(threadfile);
 
 		REQUIRE(l.launch()); //no errors
 	}
@@ -31,7 +31,7 @@ TEST_CASE( "Create process", "[loader]" ) {
 		string echo("/bin/echo");
 		string args("hello world");
 
-		Launcher l(echo);
+		StaticLauncher l(echo);
 		l.add_arguments(args);
 
 		REQUIRE(l.launch()); //no errors
