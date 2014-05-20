@@ -30,6 +30,7 @@ public:
     bool instrumentThreadEntry(BPatch_process *p, BPatch_thread *t);
     bool instrumentThreadEntry(Dyninst::Address a);
     bool instrumentExit();
+    bool finalFunction(string f);
 private:
     bool instrumentThreadEntry(BPatch_function *entryFunction);
     bool instrumentThreadEntry(BPatch_function *entryFunction,
@@ -38,6 +39,10 @@ private:
     bool threadCreation();
     bool threadJoin();
     bool threadExit();
+    bool threadMutex();
+    bool wrapFunction(BPatch_function *f,
+    		BPatch_function *newf, BPatch_function *oldf);
+    bool wrapUp(vector<BPatch_point *> *exitPoints);
     Analyser *analyser;
 	BPatch_addressSpace *app;
 	vector<BPatchSnippetHandle *> *timers;

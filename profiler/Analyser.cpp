@@ -13,6 +13,23 @@
 
 using namespace std;
 
+bool Analyser::getUsefulModules(vector<BPatch_module *> &ms){
+	vector<BPatch_module *>allms;
+
+	//back inserter alternative?
+	img->getModules(ms);
+	for (vector <BPatch_module *>::iterator it = ms.begin();
+			it != ms.end(); it++){
+		BPatch_module *m = *it;
+
+		if(!m->isSharedLib()){
+			ms.push_back(m);
+		}
+	}
+
+	return true;
+}
+
 bool Analyser::getUsefulFunctions(vector<BPatch_function *> &fs){
 	vector<BPatch_module *>ms;
 	vector<BPatch_function *> *mfs;

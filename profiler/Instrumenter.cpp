@@ -13,8 +13,10 @@
 #include "BPatch_flowGraph.h"
 #include "Symtab.h"
 #include "Symbol.h"
+#include "Command.h"
+#include "PatchMgr.h"
 using namespace std;
-using namespace Dyninst::SymtabAPI;
+using namespace Dyninst;
 
 Instrumenter::Instrumenter(Analyser *a, BPatch_addressSpace *as){
 	analyser = a;
@@ -30,13 +32,13 @@ Instrumenter::~Instrumenter(){
 /*
  * until I can get find symbol to work pull this into analyser
  */
-Symbol *findSymbol(Module *m, string s){
-	vector <Symbol *> syms;
+SymtabAPI::Symbol *findSymbol(SymtabAPI::Module *m, string s){
+	vector <SymtabAPI::Symbol *> syms;
 	//get the method names
 	m->getAllSymbols(syms);
-	for( std::vector<Symbol *>::const_iterator i = syms.begin();
+	for( std::vector<SymtabAPI::Symbol *>::const_iterator i = syms.begin();
 			i != syms.end(); ++i){
-		Symbol *f = *i;
+		SymtabAPI::Symbol *f = *i;
 		if (f->getPrettyName() == s){
 			return f;
 		}
@@ -103,6 +105,7 @@ bool Instrumenter::trackMainThread(){
 	}
 
 	cout << "instrumented " << entryFunction->getName() << endl;
+	return true;
 
 //	return instrumentThreadEntry(entryFunction, cineCreate, cineDestroy);
 
@@ -166,6 +169,24 @@ bool Instrumenter::instrumentThreadEntry(BPatch_function *entryFunction,
 
 	return true;//this can fail
 }
+
+//lets hope we are not "clobbering" registers the compiler thinks are untouched
+bool Instrumenter::wrapFunction(BPatch_function *f, BPatch_function *newf, BPatch_function *oldf){
+	SymtabAPI::Module *symtab = SymtabAPI::convert(oldf->getModule());
+
+	SymtabAPI::Symbol *sym = findSymbol(symtab, oldf->getName());
+
+	if (sym == NULL){
+		cerr << "no replacement functions found" << endl;
+		return false;
+	}
+
+	if (!app->wrapFunction(f, newf, sym)){
+		return false;
+	}
+	return true;
+}
+
 bool Instrumenter::threadCreation(){
 	BPatch_function *create = analyser->getFunction("pthread_create");
 
@@ -180,19 +201,8 @@ bool Instrumenter::threadCreation(){
 
 	BPatch_function *cineCreate = analyser->getFunction("cine_thread_create");
 	BPatch_function *replaceCreate = analyser->getFunction("orig_thread_create");
-	Module *symtab = convert(cineCreate->getModule());
+	return wrapFunction(create, cineCreate, replaceCreate);
 
-	Symbol *sym = findSymbol(symtab, "orig_thread_create");
-
-	if (sym == NULL){
-		cerr << "no replacement functions found" << endl;
-		return false;
-	}
-
-	if (!app->wrapFunction(create, cineCreate, sym)){
-		return false;
-	}
-	return true;
 }
 
 bool Instrumenter::threadStart(){
@@ -206,11 +216,16 @@ bool Instrumenter::threadStart(){
 		if(callSite->isDynamic()){
 			//this is as good as guess as any
 			BPatch_function *cineStart = analyser->getFunction("cine_start_thread");
+			BPatch_function *cineExit= analyser->getFunction("cine_exit_thread");
 			vector<BPatch_snippet *> args;
 			BPatch_funcCallExpr startCall(*cineStart, args);
-			if(app->insertSnippet(startCall, *callSite) == NULL){
+			BPatch_funcCallExpr exitCall(*cineExit, args);
+			BPatchSnippetHandle *in = app->insertSnippet(startCall, *callSite, BPatch_callBefore, BPatch_firstSnippet);
+			BPatchSnippetHandle *out = app->insertSnippet(exitCall, *callSite, BPatch_callAfter, BPatch_lastSnippet);
+			if(in == NULL || out == NULL){
 				return false;
 			}
+
 		}
 	}
 	return true;
@@ -226,6 +241,79 @@ bool Instrumenter::threadJoin(){
 		BPatch_funcCallExpr joinCall(*cineJoin, args);
 		return (app->insertSnippet(joinCall, *entries) != NULL);
 	}
+	return true;
+}
+
+bool Instrumenter::threadMutex(){
+
+	BPatch_function *mutexLock = analyser->getFunction("pthread_mutex_lock");
+	BPatch_function *cineMutexLock = analyser->getFunction("cine_mutex_lock");
+
+	vector<BPatch_point *> callers;
+	mutexLock->getCallerPoints(callers);
+
+	cout << callers.size() << " callers of pthread_mutex_lock" << endl;
+	for(vector<BPatch_point *>::const_iterator it = callers.begin();
+			it != callers.end(); it++){
+		BPatch_point *p = *it;
+		cout << p->getFunction()->getName() << " calls pthread_mutex_lock" << endl;
+		if(!p->getFunction()->getModule()->isSharedLib()){
+			if(!app->replaceFunctionCall(*p, *cineMutexLock)){
+				cout << "failed to replace function call" << endl;
+			}
+		}
+	}
+
+//	vector<BPatch_function *> fs;
+//	analyser->getUsefulFunctions(fs);
+//
+//	for(vector<BPatch_function *>::const_iterator it = fs.begin();
+//			it != fs.end(); it++){
+//		BPatch_function *f = *it;
+//
+//	}
+//	BPatch_function *mutexLock = analyser->getFunction("pthread_mutex_lock");
+//	PatchAPI::PatchMgrPtr mgr = PatchAPI::convert(app);
+//	PatchAPI::PatchFunction *pf = PatchAPI::convert(mutexLock);
+
+
+//mgr->findPoints(PatchAPI::Scope(pf),
+//			PatchAPI::Point::FuncEntry,
+//			back_inserter(entrypts));
+//
+//	mgr->findPoints(PatchAPI::Scope(pf),
+//			PatchAPI::Point::FuncExit,
+//			back_inserter(exitpts));
+
+//	BPatch_function *mutexLock = analyser->getFunction("pthread_mutex_lock");
+//	BPatch_function *cineMutexLock = analyser->getFunction("cine_mutex_lock");
+//	BPatch_function *cineMutexLockOrig = analyser->getFunction("orig_pthread_mutex_lock");
+//
+//	BPatch_function *mutexUnlock = analyser->getFunction("pthread_mutex_unlock");
+//	BPatch_function *cineMutexUnlock = analyser->getFunction("cine_mutex_unlock");
+//	BPatch_function *cineMutexUnlockOrig = analyser->getFunction("orig_pthread_mutex_unlock");
+//
+//	//pthread_mutex_trylock!!
+//
+//	if(mutexLock != NULL && !wrapFunction(mutexLock, cineMutexLock, cineMutexLockOrig)){
+//		return false;
+//	}
+//
+//	if(mutexUnlock != NULL && !wrapFunction(mutexUnlock, cineMutexUnlock, cineMutexUnlockOrig)){
+//		return false;
+//	}
+
+	//make vex call orig...
+
+	/*
+	if(pthreadMutex != NULL){
+		BPatch_function *cine= analyser->getFunction("cine_join_thread");
+		vector<BPatch_point *> *entries = pthreadJoin->findPoint(BPatch_entry);
+		vector<BPatch_snippet *> args;
+		BPatch_funcCallExpr joinCall(*cineJoin, args);
+		return (app->insertSnippet(joinCall, *entries) != NULL);
+	}
+	*/
 	return true;
 }
 
@@ -253,11 +341,15 @@ bool Instrumenter::insertThreadCalls(){
 	}
 
 	if(!threadJoin()){
-		return false;
+		cout << "no joins found" << endl;
+	}
+
+	if(!threadMutex()){
+		cout << "no mutexes found" << endl;
 	}
 
 	if(!threadExit()){
-		return false;
+		cout << "threads exit naturally" << endl;
 	}
 
 	return true;
@@ -267,6 +359,48 @@ bool Instrumenter::insertThreadCalls(){
 }
 
 bool Instrumenter::timeFunction(BPatch_function *f, int methodId){
+
+//	PatchAPI::PatchMgrPtr mgr = PatchAPI::convert(app);
+//	PatchAPI::PatchFunction *pf = PatchAPI::convert(f);
+//
+//	vector<PatchAPI::Point *> entrypts;
+//	vector<PatchAPI::Point *> exitpts;
+//	mgr->findPoints(PatchAPI::Scope(pf),
+//			PatchAPI::Point::FuncEntry,
+//			back_inserter(entrypts));
+//
+//	mgr->findPoints(PatchAPI::Scope(pf),
+//			PatchAPI::Point::FuncExit,
+//			back_inserter(exitpts));
+//
+//	vector<BPatch_snippet *>args;
+//	BPatch_constExpr mid(methodId);
+//	args.push_back(&mid);
+//	BPatch_function *timerStart = analyser->getFunction("cine_timer_entry");
+//	BPatch_function *timerStop = analyser->getFunction("cine_timer_exit");
+//	BPatch_funcCallExpr timerStartCall(*timerStart, args);
+//	BPatch_funcCallExpr timerStopCall(*timerStop, args);
+//
+//	cout << f->getName() << " entry points: " << entrypts.size() << endl;
+//	cout << f->getName() << " exit points: " << exitpts.size() << endl;
+//
+//	PatchAPI::Snippet::Ptr ptimerStart = (PatchAPI::Snippet::Ptr) timerStartCall.ast_wrapper; //PatchAPI::convert(&timerStartCall);
+//	PatchAPI::Snippet::Ptr ptimerStop = (PatchAPI::Snippet::Ptr) timerStopCall.ast_wrapper; // PatchAPI::convert(&timerStopCall);
+//
+//
+//	PatchAPI::Patcher patcher(mgr);
+//	for (vector<PatchAPI::Point *>::iterator i = entrypts.begin();
+//			i != entrypts.end(); ++i){
+//		patcher.add(PatchAPI::PushBackCommand::create(*i, ptimerStart));
+//	}
+//
+//	for (vector<PatchAPI::Point *>::iterator i = exitpts.begin();
+//			i != exitpts.end(); ++i){
+//		patcher.add(PatchAPI::PushFrontCommand::create(*i, ptimerStop));
+//	}
+//
+//	return patcher.commit();
+
 	vector<BPatch_point *> *entries = f->findPoint(BPatch_entry);
 	vector<BPatch_point *> *exits = f->findPoint(BPatch_exit);
 	BPatch_function *timerStart = analyser->getFunction("cine_timer_entry");
@@ -276,8 +410,9 @@ bool Instrumenter::timeFunction(BPatch_function *f, int methodId){
 	args.push_back(&mid);
 
 	//if you pthread_exit before the end
-	vector<BPatch_point *> calls;
-	f->getCallPoints(calls);
+	vector<BPatch_point *> *callptr = f->findPoint(BPatch_subroutine);
+//	f->getCallPoints(calls);
+
 //	BPatch_flowGraph *graph = f->getCFG();
 //	set<BPatch_basicBlock *>blocks;
 //	graph->getAllBasicBlocks(blocks);
@@ -293,25 +428,29 @@ bool Instrumenter::timeFunction(BPatch_function *f, int methodId){
 //		}
 //	}
 
+	vector<BPatch_point *>calls = *callptr;
 
+//	cout << "calls found: " << calls.size() << endl;
 	for(vector<BPatch_point *>::const_iterator c = calls.begin();
 			c != calls.end(); c++){
 		BPatch_point *cp = *c;
-		BPatch_function *callee = cp->getCalledFunction();
+		BPatch_function *callee = cp->getBlock()->getCallTarget();
+//		BPatch_function *callee = cp->getCalledFunction();
 		if (callee != NULL)
-			cout << callee->getName() << endl;
+//			cout << callee->getName() << endl;
 		if(callee != NULL && (callee->getName() == "pthread_exit" || callee->getName() == "exit")){
 			cout << "early finish on " << f->getName() << endl;
 			exits->push_back(cp);
 		}
 	}
 
-	cout << f->getName() << " entry points:" << entries->size() << " exit points:" << exits->size() << endl;
+//	cout << f->getName() << " entry points: " << entries->front()->getAddress() << " exit points:" << exits->size() << endl;
 	BPatch_funcCallExpr timerStartCall(*timerStart, args);
 	BPatch_funcCallExpr timerStopCall(*timerStop, args);
-	app->insertSnippet(timerStartCall, *entries, BPatch_lastSnippet);
-	app->insertSnippet(timerStopCall, *exits, BPatch_firstSnippet);
-	return true;
+
+	BPatchSnippetHandle *s = app->insertSnippet(timerStartCall, *entries, BPatch_lastSnippet);
+	BPatchSnippetHandle *e = app->insertSnippet(timerStopCall, *exits, BPatch_firstSnippet);
+	return (s !=NULL && e != NULL);
 }
 
 
@@ -321,7 +460,7 @@ bool Instrumenter::initCalls(){
 	//generate a call to VEX::initializeSimulator(NULL)
 	BPatch_function * programStart = analyser->getFunction("_start");
 	vector<BPatch_point *> *startPoint = programStart->findPoint(BPatch_entry);
-	BPatch_function * init = analyser->getFunction("VEX::initializeSimulator");
+	BPatch_function * init = analyser->getFunction("cine_init");
 	vector<BPatch_snippet *> args;
 	BPatch_nullExpr null;
 	args.push_back(&null);
@@ -348,10 +487,12 @@ bool Instrumenter::initCalls(){
 
 		BPatch_funcCallExpr regCall(*reg, margs);
 		if(app->insertSnippet(regCall, *startPoint, BPatch_lastSnippet) == NULL){
-			cerr << "method missed " << n << endl;
+			cerr << "method cannot be registered" << n << endl;
 		}
 
-		timeFunction(f, mid);
+		if(!timeFunction(f, mid)){
+			cerr << " method cannot be timed" << endl;
+		}
 		mid++;
 	}
 
@@ -387,36 +528,42 @@ bool Instrumenter::loadLibraries(){
 
 }
 
-bool Instrumenter::instrumentExit() {
-	BPatch_function *exit = analyser->getFunction("exit");
-	vector<BPatch_point *> *exitPoints;
-	if (exit == NULL){
-		//try end of main
-		exit = analyser->getFunction("main");
-		if (exit == NULL){
-			return false;
-		}
-		exitPoints = exit->findPoint(BPatch_exit);
-	} else {
-		exitPoints = exit->findPoint(BPatch_entry);
-	}
-
+bool Instrumenter::wrapUp(vector<BPatch_point *> *exitPoints){
 	vector<BPatch_snippet *>args;
-
-	BPatch_function *mainExit = analyser->getFunction("cine_exit_thread");
 	BPatch_function *cineCleanup = analyser->getFunction("cine_get_results");
 	BPatch_funcCallExpr cleanupCall(*cineCleanup, args);
+
+	//should exit all threads -> vex stuff
+	BPatch_function *mainExit = analyser->getFunction("cine_exit_thread");
 	BPatch_funcCallExpr exitCall(*mainExit, args);
 
-	BPatchSnippetHandle *entrySnippet;
-
-	entrySnippet = app->insertSnippet(exitCall, *exitPoints);
+	BPatchSnippetHandle *entrySnippet = app->insertSnippet(exitCall, *exitPoints, BPatch_lastSnippet);
 
 	if (entrySnippet == NULL){
 		return false;
 	}
 
-	entrySnippet = app->insertSnippet(cleanupCall, *exitPoints, BPatch_lastSnippet);
+	return (app->insertSnippet(cleanupCall, *exitPoints, BPatch_lastSnippet) != NULL);
+}
 
-	return entrySnippet != NULL;
+bool Instrumenter::finalFunction(string f){
+	vector<BPatch_point *> *exitPoints;
+	BPatch_function *exit = analyser->getFunction(f);
+	if (exit == NULL){
+		return false;
+	}
+	exitPoints = exit->findPoint(BPatch_exit);
+	return wrapUp(exitPoints);
+}
+
+bool Instrumenter::instrumentExit() {
+	BPatch_function *exit = analyser->getFunction("exit");
+	vector<BPatch_point *> *exitPoints;
+	if (exit == NULL){
+		return false;
+	}
+	exitPoints = exit->findPoint(BPatch_entry);
+
+	return wrapUp(exitPoints);
+
 }

@@ -12,10 +12,13 @@ dwarf = '/home/giovanni/oss/deps/libdwarf'
 
 #tests
 
+dyninstLibs = ['dyninstAPI', 'common', 'symtabAPI', 'instructionAPI', 'parseAPI', 'patchAPI', 'stackwalk', 'pcontrol', 'dynElf', 'dynDwarf', 'symLite']
+
+
 test_env = Environment(LIBPATH = [dwarf, dyninstlib, vexlib, vexagentlib], CCFLAGS='-g')
-test_env.Append(LIBS=['dyninstAPI', 'pcontrol', 'dynElf', 'symLite' ,'common', 'elf', 'dwarf', 
-					  'instructionAPI', 'stackwalk', 'patchAPI', 'parseAPI', 'symtabAPI', 'dynDwarf', 
-					  'vex', 'JVMTIAgent', 'papi'])
+
+#this really needs to be separated
+test_env.Append(LIBS= dyninstLibs +  ['vex', 'JVMTIAgent', 'papi'])
 test_env.Append(CPPPATH=['ctests/h', 'launcher/h', 'profiler/h', dyninstinc, vexinc])
 
 #test defines
@@ -38,6 +41,6 @@ cine_env = Environment()
 cine_sources = ['profiler/cine.cpp']
 cine_env.Append(CPPPATH=['profiler/h', dyninstinc, vexinc])
 cine_env.Append(LIBPATH=[dyninstlib, vexlib])
-cine_env.Append(LIBS=['pthread'])
-#cine_env.Append(CCFLAGS=['-O0'])
+cine_env.Append(LIBS=['pthread', 'vex'])
+cine_env.Append(CCFLAGS=['-g'])
 cine = cine_env.SharedLibrary('lib/cine.so', cine_sources)

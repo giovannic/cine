@@ -30,10 +30,6 @@ Launcher::Launcher(string &input){
 }
 
 Launcher::~Launcher(){
-	BPatch_process *proc = dynamic_cast<BPatch_process *>(app);
-	if (proc){
-		proc->detach(false);
-	}
 	delete input;
 	delete args;
 	delete bpatch;
@@ -46,7 +42,6 @@ void Launcher::add_arguments(string &args){
 }
 
 bool Launcher::launch(){
-	BPatch_binaryEdit *bin = dynamic_cast<BPatch_binaryEdit *>(app);
 	return bin->writeFile("vexbin");
 }
 
@@ -103,21 +98,31 @@ bool Launcher::setup(){
 	analyser = new Analyser(bin->getImage());
 	inst = new Instrumenter(analyser, bin->getImage()->getAddressSpace());
 
+//	inst->loadLibraries();
+//	inst->timeFunction(analyser->getFunction("inc_count"), 0);
+
+
 	if(!inst->loadLibraries()){
 		cerr << "libraries did not load" << endl;
 		return false;
 	}
 
-	/*
-	if(!inst->beginSimulator(app)){
-		cerr << "vex simulator failed to start" << endl;
+
+	if(!inst->initCalls()){
+		cerr << "init calls failed" << endl;
 		return false;
 	}
-	*/
 
 	if(!inst->insertThreadCalls()){
-		cerr << "could not patch pthread" << endl;
+		cerr << "thread calls failed" << endl;
 		return false;
+	}
+
+	if(!inst->instrumentExit()){
+		cout << "no explicit exit point falling back on thread counting" << endl;
+		//if QoS method specified make the endpoint at the exit
+		//may need better logic here
+		inst->finalFunction("main");
 	}
 
 	return true;

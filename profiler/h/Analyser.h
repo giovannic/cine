@@ -15,6 +15,7 @@ public:
 	Analyser(BPatch_image *img);
 	virtual ~Analyser();
 	bool getUsefulFunctions(vector <BPatch_function *> &fs);
+	bool getUsefulModules(vector<BPatch_module *> &ms);
 	BPatch_function *getFunction(string s);
 	BPatch_function *getStartThread();
 	vector<BPatch_function *>getAllFunctions(string s);
