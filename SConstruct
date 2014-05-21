@@ -24,7 +24,7 @@ test_env.Append(CPPPATH=['ctests/h', 'launcher/h', 'profiler/h', dyninstinc, vex
 bins = '\\"%s\\"' % Dir('ctests/testinputs').abspath
 test_env.Append(CPPDEFINES={'BIN_PATH': bins})
 
-supporting_sources = ['launcher/StaticLauncher.cpp', 'launcher/Launcher.cpp', 'profiler/Instrumenter.cpp', 'profiler/Controller.cpp', 'profiler/Analyser.cpp']
+supporting_sources = ['launcher/DynamicLauncher.cpp', 'launcher/StaticLauncher.cpp', 'launcher/Launcher.cpp', 'profiler/Instrumenter.cpp', 'profiler/Controller.cpp', 'profiler/Analyser.cpp']
 launcher_test_sources = ['ctests/launcher_test.cpp'] + supporting_sources
 test_env.Program('bin/tests/launcher_test', launcher_test_sources)
 instrument_test_sources = ['ctests/instrument_test.cpp'] + supporting_sources

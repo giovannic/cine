@@ -9,6 +9,7 @@
 #define DYNAMICLAUNCHER_H_
 
 #include "Launcher.h"
+#include "Controller.h"
 
 class DynamicLauncher: public Launcher {
 public:
@@ -16,9 +17,11 @@ public:
 	virtual ~DynamicLauncher();
 	bool launch();
 private:
+	BPatch_process *app;
+	Controller *ctrl;
 	BPatch_process *createProcess();
 	void listenResults();
-	void setup();
+	bool setup();
 };
 
 #endif /* DYNAMICLAUNCHER_H_ */

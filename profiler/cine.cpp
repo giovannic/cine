@@ -25,26 +25,70 @@ pthread_mutex_t cine_mutex;
 //that they can distinguish vex mutexes and
 //input mutexes
 
-int orig_pthread_mutex_lock(pthread_mutex_t *mutex){
-	return 1;
+//int orig_pthread_mutex_lock(pthread_mutex_t *mutex){
+//	return 1;
+//}
+
+int cine_mutex_lock(pthread_mutex_t *mutex){
+	cerr << "requesting" << endl;
+//	threadEventsBehaviour->onRequestingLock(mutex);
+	return pthread_mutex_lock(mutex);
 }
 
-int cine_mutex_lock(pthread_mutex_t *mutex,
-    const pthread_mutexattr_t *attr){
-	cerr << "waiting" << endl;
-	return orig_pthread_mutex_lock(mutex);
-}
+//int orig_pthread_mutex_unlock(pthread_mutex_t *mutex){
+//	return 1;
+//}
 
-int orig_pthread_mutex_unlock(pthread_mutex_t *mutex){
-	return 1;
-}
-
-int cine_mutex_unlock(pthread_mutex_t *mutex,
-    const pthread_mutexattr_t *attr){
+int cine_mutex_unlock(pthread_mutex_t *mutex){
 	cerr << "releasing" << endl;
-	return orig_pthread_mutex_unlock(mutex);
+//	threadEventsBehaviour->onReleasingLock(mutex);
+	return pthread_mutex_unlock(mutex);
 }
 
+int cine_cond_wait(pthread_cond_t *cond, pthread_mutex_t *mutex){
+	cerr << "waiting cond" << endl;
+//	threadEventsBehaviour->onReplacedWaiting((long)cond, true);
+	return pthread_cond_wait(cond, mutex);
+}
+
+int cine_cond_timedwait(pthread_cond_t *cond,
+		pthread_mutex_t *mutex, const struct timespec *abstime){
+	cerr << "waiting time" << endl;
+//	threadEventsBehaviour->onReplacedTimedWaiting((long)cond, abstime->tv_sec, abstime->tv_nsec, true);
+	return pthread_cond_timedwait(cond, mutex, abstime);
+}
+
+int cine_cond_broadcast(pthread_cond_t *cond){
+	cerr << "broadcast" << endl;
+//	threadEventsBehaviour->onSignallingOnObject((long)cond);
+	return pthread_cond_signal(cond);
+}
+
+int cine_cond_signal(pthread_cond_t *cond,
+		pthread_mutex_t *mutex, const struct timespec *abstime){
+	cerr << "signal" << endl;
+//	threadEventsBehaviour->onBroadcastingOnObject((long)cond);
+	return pthread_cond_broadcast(cond);
+}
+
+int cine_sleep(unsigned int t){
+	cerr << "sleep" << endl;
+//	threadEventsBehaviour->onSleep(t, 0);
+	return sleep(t);
+}
+
+int cine_yield(){
+	cerr << "yield" << endl;
+//	threadEventsBehaviour->onYield();
+	return pthread_yield();
+}
+
+int cine_join(pthread_t thread, void **value_ptr){
+	cerr << "join" << endl;
+//	threadEventsBehaviour->onJoin(thread);
+	return pthread_join(thread, value_ptr);
+
+}
 //initialisation
 void cine_init(){
 	pthread_mutex_init(&cine_mutex, NULL);
@@ -58,15 +102,14 @@ int orig_thread_create(pthread_t *thread, const pthread_attr_t *attr,
 
 int cine_thread_create(pthread_t *thread, const pthread_attr_t *attr,
 	                          void *(*start_routine) (void *), void *arg){
-    orig_pthread_mutex_lock(&cine_mutex);
+    pthread_mutex_lock(&cine_mutex);
 	int result = orig_thread_create(thread, attr, start_routine, arg);
 	//Hopefully there is no switch before this executes
-	//TODO: locking?
 	if (!result){
 //		threadEventsBehaviour->beforeCreatingThread((long) *thread);
 		cerr << "before " << *thread << endl;
 	}
-    orig_pthread_mutex_unlock(&cine_mutex);
+    pthread_mutex_unlock(&cine_mutex);
 	return result;
 
 }
@@ -84,10 +127,10 @@ void cine_start_thread(){
 	pthread_getname_np(thread, n, sizeof(n));
 //	threadEventsBehaviour->afterCreatingThread();
 //	threadEventsBehaviour->onStart((long) thread, n);
-    orig_pthread_mutex_lock(&cine_mutex);
+    pthread_mutex_lock(&cine_mutex);
 	thread_count++;
 	cerr << "after " << pthread_self() << " [" <<  n << "]" << "# " << thread_count << endl;
-    orig_pthread_mutex_unlock(&cine_mutex);
+    pthread_mutex_unlock(&cine_mutex);
 //	cerr << "-after " << pthread_self() << " [" <<  n << "]" << "# " << thread_count << endl;
 }
 
@@ -113,15 +156,11 @@ void cine_get_results(){
 //	endSimulator();
 }
 
-void cine_join_thread(){
-	cerr << "join" << endl;
-	//to be debugged
-//	threadEventsBehaviour->onJoin((long) pthread_self());
-}
+
 
 void cine_exit_thread(){
 //	threadEventsBehaviour->onEnd();
-    orig_pthread_mutex_lock(&cine_mutex);
+    pthread_mutex_lock(&cine_mutex);
 	thread_count--;
 	cerr << "thread exited " << pthread_self() << " left: " << thread_count << endl;
 	if (!thread_count){
@@ -131,7 +170,7 @@ void cine_exit_thread(){
 		}
 	}
 	//lets hope ending the simulator does not fail
-    orig_pthread_mutex_unlock(&cine_mutex);
+    pthread_mutex_unlock(&cine_mutex);
 }
 
 void cine_method_registration(char *name, int mid){

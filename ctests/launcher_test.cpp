@@ -8,6 +8,7 @@
 #define CATCH_CONFIG_MAIN
 #include "catch.hpp"
 #include "StaticLauncher.h"
+#include "DynamicLauncher.h"
 #include <unistd.h>
 #include <iostream>
 #include <sstream>
@@ -38,6 +39,14 @@ TEST_CASE( "Create process", "[loader]" ) {
 
 	}
 
+	SECTION("dynamic "){
+		//basic
+		string testpath(BIN_PATH);
+		string threadfile = testpath + "/threads";
+		DynamicLauncher l(threadfile);
+
+		REQUIRE(l.launch()); //no errors
+	}
 	//multiple arguments
 }
 

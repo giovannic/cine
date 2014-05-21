@@ -244,34 +244,96 @@ bool Instrumenter::threadJoin(){
 	return true;
 }
 
-bool Instrumenter::threadMutex(){
+bool Instrumenter::replaceCalls(vector<BPatch_function *> &fs,
+		vector<BPatch_function *>&oldFs, BPatch_function *newF){
+	for (vector<BPatch_function *>::const_iterator it = oldFs.begin();
+			it != oldFs.end(); ++it){
+		BPatch_function *f = *it;
+		if(!replaceCalls(fs, f, newF)){
+			return false;
+		}
+	}
+	return true;
+}
 
+bool Instrumenter::replaceCalls(vector<BPatch_function *> &fs,
+		BPatch_function *oldF, BPatch_function *newF){
+	vector<BPatch_point *> callPoints;
+
+	for(vector<BPatch_function *>::const_iterator it = fs.begin();
+			it != fs.end(); it++){
+		BPatch_function *f = *it;
+		analyser->getCalls(f, oldF, callPoints);
+	}
+
+	for(vector<BPatch_point *>::const_iterator it = callPoints.begin();
+			it != callPoints.end(); it++){
+		BPatch_point *p = *it;
+		if(!app->replaceFunctionCall(*p, *newF)){
+			return false;
+		}
+	}
+	return true;
+}
+
+bool Instrumenter::instrumentSleep() {
+	BPatch_function *sleep = analyser->getFunction("sleep");
+	BPatch_function *cineSleep = analyser->getFunction("cine_sleep");
+
+	BPatch_function *yield = analyser->getFunction("pthread_yield");
+	BPatch_function *cineYield = analyser->getFunction("cine_yeild");
+
+	BPatch_function *join = analyser->getFunction("pthread_join");
+	BPatch_function *cineJoin = analyser->getFunction("cine_join");
+
+	vector<BPatch_function *> fs;
+	analyser->getUsefulFunctions(fs);
+
+	return (replaceCalls(fs, sleep, cineSleep) &&
+			replaceCalls(fs, yield, cineYield) &&
+			replaceCalls(fs, join, cineJoin)
+			);
+
+}
+
+bool Instrumenter::threadMutex(){
+	//pthread_mutex_trylock!!
+	//Hack to true
+
+	//pthread_cond_wait
+	//pthread_cond_timed_wait
+
+	vector<BPatch_function *> fs;
+	analyser->getUsefulFunctions(fs);
+
+	//this will regex search and find the mangled name
 	BPatch_function *mutexLock = analyser->getFunction("pthread_mutex_lock");
 	BPatch_function *cineMutexLock = analyser->getFunction("cine_mutex_lock");
 
-	vector<BPatch_point *> callers;
-	mutexLock->getCallerPoints(callers);
+	BPatch_function *mutexUnlock = analyser->getFunction("pthread_mutex_unlock");
+	BPatch_function *cineMutexUnlock = analyser->getFunction("cine_mutex_unlock");
 
-	cout << callers.size() << " callers of pthread_mutex_lock" << endl;
-	for(vector<BPatch_point *>::const_iterator it = callers.begin();
-			it != callers.end(); it++){
-		BPatch_point *p = *it;
-		cout << p->getFunction()->getName() << " calls pthread_mutex_lock" << endl;
-		if(!p->getFunction()->getModule()->isSharedLib()){
-			if(!app->replaceFunctionCall(*p, *cineMutexLock)){
-				cout << "failed to replace function call" << endl;
-			}
-		}
-	}
+	vector<BPatch_function *>condWaits = analyser->getAllFunctions("pthread_cond_wait");
+	BPatch_function *cineCondWait = analyser->getFunction("cine_cond_wait");
 
-//	vector<BPatch_function *> fs;
-//	analyser->getUsefulFunctions(fs);
-//
-//	for(vector<BPatch_function *>::const_iterator it = fs.begin();
-//			it != fs.end(); it++){
-//		BPatch_function *f = *it;
-//
-//	}
+	vector<BPatch_function *>condTimedwaits = analyser->getAllFunctions("pthread_cond_timedwait");
+	BPatch_function *cineCondTimedwait = analyser->getFunction("cine_cond_timedwait");
+
+	vector<BPatch_function *>condSignals = analyser->getAllFunctions("pthread_cond_signal");
+	BPatch_function *cineCondSignal = analyser->getFunction("cine_cond_signal");
+
+	vector<BPatch_function *>condBroadcasts = analyser->getAllFunctions("pthread_cond_broadcast");
+	BPatch_function *cineCondBroadcast = analyser->getFunction("cine_cond_broadcast");
+
+	return (replaceCalls(fs, mutexLock, cineMutexLock) &&
+			replaceCalls(fs, mutexUnlock, cineMutexUnlock) &&
+			replaceCalls(fs, condWaits, cineCondWait) &&
+			replaceCalls(fs, condTimedwaits, cineCondTimedwait) &&
+			replaceCalls(fs, condSignals, cineCondSignal) &&
+			replaceCalls(fs, condBroadcasts, cineCondBroadcast)
+			);
+
+	//attempt to wrap
 //	BPatch_function *mutexLock = analyser->getFunction("pthread_mutex_lock");
 //	PatchAPI::PatchMgrPtr mgr = PatchAPI::convert(app);
 //	PatchAPI::PatchFunction *pf = PatchAPI::convert(mutexLock);
@@ -293,7 +355,6 @@ bool Instrumenter::threadMutex(){
 //	BPatch_function *cineMutexUnlock = analyser->getFunction("cine_mutex_unlock");
 //	BPatch_function *cineMutexUnlockOrig = analyser->getFunction("orig_pthread_mutex_unlock");
 //
-//	//pthread_mutex_trylock!!
 //
 //	if(mutexLock != NULL && !wrapFunction(mutexLock, cineMutexLock, cineMutexLockOrig)){
 //		return false;
@@ -314,7 +375,6 @@ bool Instrumenter::threadMutex(){
 		return (app->insertSnippet(joinCall, *entries) != NULL);
 	}
 	*/
-	return true;
 }
 
 bool Instrumenter::threadExit(){
@@ -340,22 +400,54 @@ bool Instrumenter::insertThreadCalls(){
 		return false;
 	}
 
-	if(!threadJoin()){
-		cout << "no joins found" << endl;
-	}
-
 	if(!threadMutex()){
-		cout << "no mutexes found" << endl;
+		cerr << "mutexes failed" << endl;
 	}
 
 	if(!threadExit()){
-		cout << "threads exit naturally" << endl;
+		cerr << "threads exit naturally" << endl;
 	}
 
 	return true;
 
-	//wrap mutex
+}
 
+bool Instrumenter::timeFunctionCalls(BPatch_function *f, int methodId){
+
+	vector<BPatch_function *>useful;
+	vector<BPatch_point *>callpts;
+	analyser->getUsefulFunctions(useful);
+	for(vector<BPatch_function *>::const_iterator it = useful.begin();
+			it != useful.end(); ++it){
+		BPatch_function *usefulF = *it;
+		analyser->getCalls(usefulF, f, callpts);
+	}
+
+	BPatch_function *timerStart = analyser->getFunction("cine_timer_entry");
+	BPatch_function *timerStop = analyser->getFunction("cine_timer_exit");
+	vector<BPatch_snippet *>args;
+	BPatch_constExpr mid(methodId);
+	args.push_back(&mid);
+
+	BPatch_funcCallExpr timerStartCall(*timerStart, args);
+	BPatch_funcCallExpr timerStopCall(*timerStop, args);
+
+	BPatch_point *allExit = analyser->hasCall(f, "exit");
+	if(allExit != NULL){
+		app->insertSnippet(timerStopCall, *allExit, BPatch_callBefore, BPatch_firstSnippet);
+	}
+	BPatch_point *pExit = analyser->hasCall(f, "pthread_exit");
+	if(pExit != NULL){
+		app->insertSnippet(timerStopCall, *pExit, BPatch_callBefore, BPatch_firstSnippet);
+	}
+
+	if(allExit || pExit){
+		cout << "early finish on " << f->getName() << endl;
+	}
+
+	BPatchSnippetHandle *s = app->insertSnippet(timerStartCall, callpts, BPatch_callBefore, BPatch_lastSnippet);
+	BPatchSnippetHandle *e = app->insertSnippet(timerStopCall, callpts, BPatch_callAfter, BPatch_firstSnippet);
+	return (s !=NULL && e != NULL);
 }
 
 bool Instrumenter::timeFunction(BPatch_function *f, int methodId){
@@ -410,8 +502,6 @@ bool Instrumenter::timeFunction(BPatch_function *f, int methodId){
 	args.push_back(&mid);
 
 	//if you pthread_exit before the end
-	vector<BPatch_point *> *callptr = f->findPoint(BPatch_subroutine);
-//	f->getCallPoints(calls);
 
 //	BPatch_flowGraph *graph = f->getCFG();
 //	set<BPatch_basicBlock *>blocks;
@@ -428,21 +518,18 @@ bool Instrumenter::timeFunction(BPatch_function *f, int methodId){
 //		}
 //	}
 
-	vector<BPatch_point *>calls = *callptr;
-
-//	cout << "calls found: " << calls.size() << endl;
-	for(vector<BPatch_point *>::const_iterator c = calls.begin();
-			c != calls.end(); c++){
-		BPatch_point *cp = *c;
-		BPatch_function *callee = cp->getBlock()->getCallTarget();
-//		BPatch_function *callee = cp->getCalledFunction();
-		if (callee != NULL)
-//			cout << callee->getName() << endl;
-		if(callee != NULL && (callee->getName() == "pthread_exit" || callee->getName() == "exit")){
-			cout << "early finish on " << f->getName() << endl;
-			exits->push_back(cp);
-		}
+	BPatch_point *allExit = analyser->hasCall(f, "exit");
+	if(allExit != NULL){
+		exits->push_back(allExit);
 	}
+	BPatch_point *pExit = analyser->hasCall(f, "pthread_exit");
+	if(pExit != NULL){
+		exits->push_back(pExit);
+	}
+	if(allExit || pExit){
+		cout << "early finish on " << f->getName() << endl;
+	}
+
 
 //	cout << f->getName() << " entry points: " << entries->front()->getAddress() << " exit points:" << exits->size() << endl;
 	BPatch_funcCallExpr timerStartCall(*timerStart, args);
@@ -534,14 +621,14 @@ bool Instrumenter::wrapUp(vector<BPatch_point *> *exitPoints){
 	BPatch_funcCallExpr cleanupCall(*cineCleanup, args);
 
 	//should exit all threads -> vex stuff
-	BPatch_function *mainExit = analyser->getFunction("cine_exit_thread");
-	BPatch_funcCallExpr exitCall(*mainExit, args);
-
-	BPatchSnippetHandle *entrySnippet = app->insertSnippet(exitCall, *exitPoints, BPatch_lastSnippet);
-
-	if (entrySnippet == NULL){
-		return false;
-	}
+//	BPatch_function *mainExit = analyser->getFunction("cine_exit_thread");
+//	BPatch_funcCallExpr exitCall(*mainExit, args);
+//
+//	BPatchSnippetHandle *entrySnippet = app->insertSnippet(exitCall, *exitPoints, BPatch_lastSnippet);
+//
+//	if (entrySnippet == NULL){
+//		return false;
+//	}
 
 	return (app->insertSnippet(cleanupCall, *exitPoints, BPatch_lastSnippet) != NULL);
 }
@@ -552,7 +639,19 @@ bool Instrumenter::finalFunction(string f){
 	if (exit == NULL){
 		return false;
 	}
+
 	exitPoints = exit->findPoint(BPatch_exit);
+	//unnecessary
+//	string exitName = "exit";
+//
+//	BPatch_point *p = analyser->hasCall(exit, exitName);
+//	if (p != NULL){
+//		exitPoints->push_back(p);
+//	}
+
+	if (exitPoints->size() == 0){
+		return false;
+	}
 	return wrapUp(exitPoints);
 }
 
@@ -565,5 +664,8 @@ bool Instrumenter::instrumentExit() {
 	exitPoints = exit->findPoint(BPatch_entry);
 
 	return wrapUp(exitPoints);
+}
 
+bool Instrumenter::instrumentContention() {
+	return (threadMutex() && instrumentSleep());
 }

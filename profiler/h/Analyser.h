@@ -20,6 +20,8 @@ public:
 	BPatch_function *getStartThread();
 	vector<BPatch_function *>getAllFunctions(string s);
     BPatch_function *findMethod(Dyninst::Address a);
+    BPatch_point *hasCall(BPatch_function *f, string calleeName);
+    void getCalls(BPatch_function *f, BPatch_function *newF, vector<BPatch_point *> &pts);
 private:
 	BPatch_image *img;
 };

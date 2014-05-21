@@ -38,7 +38,7 @@ void *inc_count(void *t)
     reached.  Note that this occurs while mutex is locked. 
     */
     if (count == COUNT_LIMIT) {
-      printf("inc_count(): thread %ld, count = %d  Threshold reached. ",
+      printf("inc_count(): thread %ld, count = %d  Threshold reached. \n",
              my_id, count);
       pthread_cond_signal(&count_threshold_cv);
       printf("Just sent signal.\n");

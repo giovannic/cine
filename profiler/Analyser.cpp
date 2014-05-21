@@ -8,6 +8,7 @@
 #include "Analyser.h"
 #include <vector>
 #include "BPatch_function.h"
+#include "BPatch_point.h"
 #include "BPatch_image.h"
 #include <iostream>
 
@@ -95,3 +96,55 @@ Analyser::~Analyser() {
 BPatch_function* Analyser::findMethod(Dyninst::Address a) {
 	return img->findFunction(a);
 }
+
+//TODO:fix this for static analysis
+void Analyser::getCalls(BPatch_function *f, BPatch_function *newF, vector<BPatch_point *> &pts){
+	vector<BPatch_point *>calls;
+	f->getCallPoints(calls);
+	bool has = false;
+
+//	cout << "calls found: " << calls.size() << endl;
+	for(vector<BPatch_point *>::const_iterator c = calls.begin();
+			c != calls.end(); c++){
+		BPatch_point *cp = *c;
+		BPatch_function *callee = cp->getCalledFunction();
+		if(callee != NULL && (callee->getDemangledName() == newF->getDemangledName())){
+			pts.push_back(cp);
+		}
+	}
+}
+
+//TODO:fix this for static analysis
+BPatch_point *Analyser::hasCall(BPatch_function *f, string calleeName){
+	vector<BPatch_point *>calls;
+	f->getCallPoints(calls);
+
+//	cout << "calls found: " << calls.size() << endl;
+	for(vector<BPatch_point *>::const_iterator c = calls.begin();
+			c != calls.end(); c++){
+		BPatch_point *cp = *c;
+		BPatch_function *callee = cp->getCalledFunction();
+		if(callee != NULL && (callee->getName() == calleeName)){
+			return cp;
+		}
+	}
+	return NULL;
+}
+
+//	BPatch_function *mutexLock = analyser->getFunction("pthread_mutex_lock");
+//	BPatch_function *cineMutexLock = analyser->getFunction("cine_mutex_lock");
+//
+//	vector<BPatch_point *> callers;
+//	mutexLock->getCallerPoints(callers);
+//
+//	cout << callers.size() << " callers of pthread_mutex_lock" << endl;
+//	for(vector<BPatch_point *>::const_iterator it = callers.begin();
+//			it != callers.end(); it++){
+//		BPatch_point *p = *it;
+//		cout << p->getFunction()->getName() << " calls pthread_mutex_lock" << endl;
+//		if(!p->getFunction()->getModule()->isSharedLib()){
+//			if(!app->replaceFunctionCall(*p, *cineMutexLock)){
+//				cout << "failed to replace function call" << endl;
+//			}
+//		}
+//	}

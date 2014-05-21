@@ -8,6 +8,11 @@
 #include "DynamicLauncher.h"
 
 DynamicLauncher::DynamicLauncher(string &input):Launcher(input) {
+	this->app = createProcess();
+	this->analyser = new Analyser(app->getImage());
+	this->inst = new Instrumenter(analyser, app);
+	this->ctrl = new Controller(inst, analyser, app);
+	setup();
 }
 
 DynamicLauncher::~DynamicLauncher() {
@@ -50,4 +55,49 @@ void getResults(BPatch_thread *thread, BPatch_exitType e) {
 
 void DynamicLauncher::listenResults(){
 	bpatch->registerExitCallback(getResults);
+}
+
+bool DynamicLauncher::launch(){
+	app->continueExecution();
+	while (!app->isTerminated())
+		bpatch->waitForStatusChange();
+	return true;
+}
+
+bool DynamicLauncher::setup(){
+
+//	inst->loadLibraries();
+//	inst->timeFunction(analyser->getFunction("watch_count"), 0);
+//	inst->timeFunction(analyser->getFunction("inc_count"), 0);
+
+	if(!inst->loadLibraries()){
+		cerr << "libraries did not load" << endl;
+		return false;
+	}
+
+	if(!ctrl->beginSimulator()){
+		cerr << "vex simulator failed to start" << endl;
+		return false;
+	}
+
+	if(!ctrl->registerMethods()){
+		cerr << "unable to register methods" << endl;
+		return false;
+	}
+
+//	if(!inst->threadCreation()){
+//		cerr << "creation and deletion failed" << endl;
+//		return false;
+//	}
+
+//	if(!inst->instrumentContention()){
+//		cerr << "contention failed" << endl;
+//		return false;
+//	}
+
+	//this doesn't work
+//	ctrl->listenResults();
+	inst->finalFunction("main");
+
+	return true;
 }

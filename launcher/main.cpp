@@ -6,11 +6,12 @@
  */
 
 #include"StaticLauncher.h"
+#include"DynamicLauncher.h"
 #include <stdlib.h>
 
 int main(int argc, char* argv[]) {
 	//TODO: validate and add program arguments
 	string input(argv[1]);
-	StaticLauncher(input).launch();
+	DynamicLauncher(input).launch();
 	exit(0);
 }

@@ -23,6 +23,8 @@ public:
 	BPatch_thread *getEventThread(Dyninst::ProcControlAPI::Event::const_ptr ev);
 	bool registerThreadStart(BPatch_thread *t);
 	bool registerThreadStart(Dyninst::Address a);
+	bool beginSimulator();
+	bool registerMethods();
 private:
 	Instrumenter *inst;
 	BPatch_process *proc;
