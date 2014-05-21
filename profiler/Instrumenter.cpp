@@ -83,28 +83,55 @@ bool Instrumenter::instrumentThreadEntry(BPatch_process*p, BPatch_thread *t){
 	return false;
 }
 
-bool Instrumenter::trackMainThread(){
+bool Instrumenter::threadCreation(){
+//	BPatch_function *create = analyser->getFunction("pthread_create");
+//
+////	BPatch_function *beforeCreate = analyser->getFunction("cine_before_create");
+////	BPatch_paramExpr thread(0);
+////	vector<BPatch_snippet *> args;
+////	args.push_back(&thread);
+////	BPatch_funcCallExpr beforeCall(*beforeCreate, args);
+////
+////	vector<BPatch_point*> *entries = create->findPoint(BPatch_exit);
+////	return(app->insertSnippet(beforeCall, *entries) != NULL);
+//
+//	BPatch_function *cineCreate = analyser->getFunction("cine_thread_create");
+//	BPatch_function *replaceCreate = analyser->getFunction("orig_thread_create");
+//	return wrapFunction(create, cineCreate, replaceCreate);
 
-	BPatch_function *entryFunction = analyser->getFunction("_start");
+	BPatch_function *pcreate = analyser->getFunction("pthread_create");
+	BPatch_function *cineCreate = analyser->getFunction("cine_thread_create");
+	vector<BPatch_function *>fs;
+	analyser->getUsefulFunctions(fs);
+	return (replaceCalls(fs, pcreate, cineCreate) && threadStart());
+}
 
-	BPatch_function *cineCreate = analyser->getFunction("cine_initial_thread");
+bool Instrumenter::threadDestruction() {
+	BPatch_function *exit = analyser->getFunction("exit");
+	BPatch_function *pexit = analyser->getFunction("pthread_exit");
 	BPatch_function *cineDestroy = analyser->getFunction("cine_exit_thread");
+	BPatch_function *cineDestroyAll = analyser->getFunction("cine_teardown");
 
-	cout << entryFunction->findPoint(BPatch_exit)->front()->getAddress() << endl;
-	vector<BPatch_point *> *entries = entryFunction->findPoint(BPatch_entry);
+	vector<BPatch_function *>fs;
+	analyser->getUsefulFunctions(fs);
+	return (replaceCalls(fs, pexit, cineDestroy) &&
+			replaceCalls(fs, exit, cineDestroyAll));
+}
+
+bool Instrumenter::mainThreadCreation(){
+	BPatch_function *main = analyser->getFunction("main");
+
+	BPatch_function *cineCreate = analyser->getFunction("cine_init");
+
+	vector<BPatch_point *> *entries = main->findPoint(BPatch_entry);
 
 	vector<BPatch_snippet *>args;
-	BPatch_funcCallExpr entryCall(*cineCreate, args);
+	BPatch_funcCallExpr cineSetupCall(*cineCreate, args);
 
-	BPatchSnippetHandle *entrySnippet = app->insertSnippet(entryCall, *entries);
-
-	if(entrySnippet == NULL){
-		cerr << "entry instrumentation failed" << endl;
-	} else {
-		timers->push_back(entrySnippet);
+	if(!app->insertSnippet(cineSetupCall, *entries)){
+		cerr << "mainthread instrumentation failed" << endl;
 	}
 
-	cout << "instrumented " << entryFunction->getName() << endl;
 	return true;
 
 //	return instrumentThreadEntry(entryFunction, cineCreate, cineDestroy);
@@ -187,23 +214,7 @@ bool Instrumenter::wrapFunction(BPatch_function *f, BPatch_function *newf, BPatc
 	return true;
 }
 
-bool Instrumenter::threadCreation(){
-	BPatch_function *create = analyser->getFunction("pthread_create");
 
-//	BPatch_function *beforeCreate = analyser->getFunction("cine_before_create");
-//	BPatch_paramExpr thread(0);
-//	vector<BPatch_snippet *> args;
-//	args.push_back(&thread);
-//	BPatch_funcCallExpr beforeCall(*beforeCreate, args);
-//
-//	vector<BPatch_point*> *entries = create->findPoint(BPatch_exit);
-//	return(app->insertSnippet(beforeCall, *entries) != NULL);
-
-	BPatch_function *cineCreate = analyser->getFunction("cine_thread_create");
-	BPatch_function *replaceCreate = analyser->getFunction("orig_thread_create");
-	return wrapFunction(create, cineCreate, replaceCreate);
-
-}
 
 bool Instrumenter::threadStart(){
 	BPatch_function *start = analyser->getFunction("start_thread");
@@ -423,6 +434,9 @@ bool Instrumenter::timeFunctionCalls(BPatch_function *f, int methodId){
 		analyser->getCalls(usefulF, f, callpts);
 	}
 
+	BPatch_function *fAllExit = analyser->getFunction("exit");
+	BPatch_function *fPExit = analyser->getFunction("pthread_exit");
+
 	BPatch_function *timerStart = analyser->getFunction("cine_timer_entry");
 	BPatch_function *timerStop = analyser->getFunction("cine_timer_exit");
 	vector<BPatch_snippet *>args;
@@ -432,11 +446,11 @@ bool Instrumenter::timeFunctionCalls(BPatch_function *f, int methodId){
 	BPatch_funcCallExpr timerStartCall(*timerStart, args);
 	BPatch_funcCallExpr timerStopCall(*timerStop, args);
 
-	BPatch_point *allExit = analyser->hasCall(f, "exit");
+	BPatch_point *allExit = analyser->hasCall(f, fAllExit);
 	if(allExit != NULL){
 		app->insertSnippet(timerStopCall, *allExit, BPatch_callBefore, BPatch_firstSnippet);
 	}
-	BPatch_point *pExit = analyser->hasCall(f, "pthread_exit");
+	BPatch_point *pExit = analyser->hasCall(f, fPExit);
 	if(pExit != NULL){
 		app->insertSnippet(timerStopCall, *pExit, BPatch_callBefore, BPatch_firstSnippet);
 	}
@@ -495,6 +509,10 @@ bool Instrumenter::timeFunction(BPatch_function *f, int methodId){
 
 	vector<BPatch_point *> *entries = f->findPoint(BPatch_entry);
 	vector<BPatch_point *> *exits = f->findPoint(BPatch_exit);
+
+	BPatch_function *fExit = analyser->getFunction("exit");
+	BPatch_function *fPExit = analyser->getFunction("pthread_exit");
+
 	BPatch_function *timerStart = analyser->getFunction("cine_timer_entry");
 	BPatch_function *timerStop = analyser->getFunction("cine_timer_exit");
 	vector<BPatch_snippet *>args;
@@ -518,11 +536,11 @@ bool Instrumenter::timeFunction(BPatch_function *f, int methodId){
 //		}
 //	}
 
-	BPatch_point *allExit = analyser->hasCall(f, "exit");
+	BPatch_point *allExit = analyser->hasCall(f, fExit);
 	if(allExit != NULL){
 		exits->push_back(allExit);
 	}
-	BPatch_point *pExit = analyser->hasCall(f, "pthread_exit");
+	BPatch_point *pExit = analyser->hasCall(f, fPExit);
 	if(pExit != NULL){
 		exits->push_back(pExit);
 	}
@@ -617,7 +635,7 @@ bool Instrumenter::loadLibraries(){
 
 bool Instrumenter::wrapUp(vector<BPatch_point *> *exitPoints){
 	vector<BPatch_snippet *>args;
-	BPatch_function *cineCleanup = analyser->getFunction("cine_get_results");
+	BPatch_function *cineCleanup = analyser->getFunction("cine_teardown");
 	BPatch_funcCallExpr cleanupCall(*cineCleanup, args);
 
 	//should exit all threads -> vex stuff
@@ -669,3 +687,5 @@ bool Instrumenter::instrumentExit() {
 bool Instrumenter::instrumentContention() {
 	return (threadMutex() && instrumentSleep());
 }
+
+

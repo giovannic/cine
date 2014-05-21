@@ -115,7 +115,7 @@ void Analyser::getCalls(BPatch_function *f, BPatch_function *newF, vector<BPatch
 }
 
 //TODO:fix this for static analysis
-BPatch_point *Analyser::hasCall(BPatch_function *f, string calleeName){
+BPatch_point *Analyser::hasCall(BPatch_function *f, BPatch_function *calleeF){
 	vector<BPatch_point *>calls;
 	f->getCallPoints(calls);
 
@@ -124,7 +124,7 @@ BPatch_point *Analyser::hasCall(BPatch_function *f, string calleeName){
 			c != calls.end(); c++){
 		BPatch_point *cp = *c;
 		BPatch_function *callee = cp->getCalledFunction();
-		if(callee != NULL && (callee->getName() == calleeName)){
+		if(callee != NULL && (callee->getDemangledName() == calleeF->getDemangledName())){
 			return cp;
 		}
 	}

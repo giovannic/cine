@@ -27,13 +27,14 @@ public:
     bool timeFunction(BPatch_function *f, int methodId);
 	bool timeFunctionCalls(BPatch_function *f, int methodId);
     bool instrumentThreadEntry(BPatch_thread *t);
-    bool trackMainThread();
+    bool mainThreadCreation();
     bool instrumentThreadEntry(BPatch_process *p, BPatch_thread *t);
     bool instrumentThreadEntry(Dyninst::Address a);
     bool instrumentExit();
     bool finalFunction(string f);
     bool instrumentContention();
     bool threadCreation();
+    bool threadDestruction();
 private:
     bool instrumentThreadEntry(BPatch_function *entryFunction);
     bool instrumentThreadEntry(BPatch_function *entryFunction,

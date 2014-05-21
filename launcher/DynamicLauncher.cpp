@@ -85,19 +85,33 @@ bool DynamicLauncher::setup(){
 		return false;
 	}
 
+//	if(!inst->mainThreadCreation()){
+//		cerr << "main thread control failed" << endl;
+//		return false;
+//	}
+
+	if(!inst->threadCreation()){
+		cerr << "thread creation failed" << endl;
+		return false;
+	}
+
+	if(!inst->threadDestruction()){
+		cerr << "thread destruction failed" << endl;
+		return false;
+	}
 //	if(!inst->threadCreation()){
 //		cerr << "creation and deletion failed" << endl;
 //		return false;
 //	}
 
-//	if(!inst->instrumentContention()){
-//		cerr << "contention failed" << endl;
-//		return false;
-//	}
+	if(!inst->instrumentContention()){
+		cerr << "contention failed" << endl;
+		return false;
+	}
 
 	//this doesn't work
 //	ctrl->listenResults();
-	inst->finalFunction("main");
+//	inst->finalFunction("main");
 
 	return true;
 }
