@@ -34,7 +34,7 @@ pthread_mutex_t cine_mutex;
 
 int cine_mutex_lock(pthread_mutex_t *mutex){
 	cerr << "requesting" << endl;
-	threadEventsBehaviour->onRequestingLock(mutex);
+	threadEventsBehaviour->onRequestingLock((long)mutex);
 //	return pthread_mutex_lock(mutex);
 }
 
@@ -44,7 +44,7 @@ int cine_mutex_lock(pthread_mutex_t *mutex){
 
 int cine_mutex_unlock(pthread_mutex_t *mutex){
 	cerr << "releasing" << endl;
-	threadEventsBehaviour->onReleasingLock(mutex);
+	threadEventsBehaviour->onReleasingLock((long)mutex);
 //	return pthread_mutex_unlock(mutex);
 }
 
@@ -88,7 +88,7 @@ int cine_yield(){
 
 int cine_join(pthread_t thread, void **value_ptr){
 	cerr << "join" << endl;
-	threadEventsBehaviour->onJoin(thread);
+	threadEventsBehaviour->onJoin((long)thread);
 //	return pthread_join(thread, value_ptr);
 }
 
@@ -132,7 +132,8 @@ int cine_thread_create(pthread_t *thread, const pthread_attr_t *attr,
 	//Hopefully there is no switch before this executes
 	if (!result){
 		threadEventsBehaviour->beforeCreatingThread((long) *thread);
-		cerr << "before " << *thread << endl;
+		thread_count++; //increment here since creation may be delayed
+		cerr << "before " << *thread << "# " << thread_count << endl;
 	}
     pthread_mutex_unlock(&cine_mutex);
 	return result;
@@ -140,11 +141,13 @@ int cine_thread_create(pthread_t *thread, const pthread_attr_t *attr,
 
 void cine_start_thread(){
 	pthread_t thread = pthread_self();
+	char n[50];
+	pthread_getname_np(thread, n, sizeof(n));
     pthread_mutex_lock(&cine_mutex); //hopefully this fixes context switching concerns from thread creation
 	threadEventsBehaviour->afterCreatingThread(); //lets hope that this does not block
-	thread_count++;
-	cerr << "child " << pthread_self() << " # " << thread_count << endl;
+	cerr << "child " << pthread_self() << endl;
     pthread_mutex_unlock(&cine_mutex);
+	threadEventsBehaviour->onStart((long)thread, n);
 }
 
 

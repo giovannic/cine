@@ -109,9 +109,9 @@ bool DynamicLauncher::setup(){
 		return false;
 	}
 
-	//this doesn't work
+	//this causes a segfault as dyninst searches for lib=""
 //	ctrl->listenResults();
-	inst->finalFunction("main");
+//	inst->finalFunction("main");
 
 	return true;
 }
