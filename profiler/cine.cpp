@@ -90,15 +90,16 @@ int cine_join(pthread_t thread, void **value_ptr){
 	cerr << "join" << endl;
 	threadEventsBehaviour->onJoin(thread);
 //	return pthread_join(thread, value_ptr);
-
 }
 
 //thread registering
 void cine_initial_thread(){
 	pthread_t t = pthread_self();
 	threadEventsBehaviour->onThreadMainStart((long)t);
+    pthread_mutex_lock(&cine_mutex);
 	thread_count++;
 	cerr << "initial " << pthread_self() << " # " << thread_count << endl;
+    pthread_mutex_unlock(&cine_mutex);
 }
 
 void cine_new_thread(){
@@ -106,8 +107,10 @@ void cine_new_thread(){
 	char n[50];
 	pthread_getname_np(t, n, sizeof(n));
 	threadEventsBehaviour->onStart((long)t, n);
+    pthread_mutex_lock(&cine_mutex);
 	thread_count++;
 	cerr << "new " << pthread_self() << " # " << thread_count << endl;
+    pthread_mutex_unlock(&cine_mutex);
 }
 
 //initialisation

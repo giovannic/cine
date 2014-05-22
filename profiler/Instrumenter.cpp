@@ -292,7 +292,7 @@ bool Instrumenter::instrumentSleep() {
 	BPatch_function *cineSleep = analyser->getFunction("cine_sleep");
 
 	BPatch_function *yield = analyser->getFunction("pthread_yield");
-	BPatch_function *cineYield = analyser->getFunction("cine_yeild");
+	BPatch_function *cineYield = analyser->getFunction("cine_yield");
 
 	BPatch_function *join = analyser->getFunction("pthread_join");
 	BPatch_function *cineJoin = analyser->getFunction("cine_join");
@@ -687,5 +687,3 @@ bool Instrumenter::instrumentExit() {
 bool Instrumenter::instrumentContention() {
 	return (threadMutex() && instrumentSleep());
 }
-
-

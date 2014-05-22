@@ -111,7 +111,7 @@ bool DynamicLauncher::setup(){
 
 	//this doesn't work
 //	ctrl->listenResults();
-//	inst->finalFunction("main");
+	inst->finalFunction("main");
 
 	return true;
 }
