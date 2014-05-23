@@ -85,11 +85,6 @@ bool DynamicLauncher::setup(){
 		return false;
 	}
 
-//	if(!inst->mainThreadCreation()){
-//		cerr << "main thread control failed" << endl;
-//		return false;
-//	}
-
 	if(!inst->threadCreation()){
 		cerr << "thread creation failed" << endl;
 		return false;
@@ -99,10 +94,6 @@ bool DynamicLauncher::setup(){
 		cerr << "thread destruction failed" << endl;
 		return false;
 	}
-//	if(!inst->threadCreation()){
-//		cerr << "creation and deletion failed" << endl;
-//		return false;
-//	}
 
 	if(!inst->instrumentContention()){
 		cerr << "contention failed" << endl;

@@ -18,9 +18,10 @@ using namespace std;
 using namespace VEX;
 
 long thread_count = 0;
-long end_count = 1;
+long end_count = 0;
 bool initialised = false;
 
+pthread_t init_thread;
 pthread_mutex_t cine_mutex;
 
 //--Mutex methods
@@ -28,19 +29,11 @@ pthread_mutex_t cine_mutex;
 //that they can distinguish vex mutexes and
 //input mutexes
 
-//int orig_pthread_mutex_lock(pthread_mutex_t *mutex){
-//	return 1;
-//}
-
 int cine_mutex_lock(pthread_mutex_t *mutex){
 	cerr << "requesting" << endl;
 	threadEventsBehaviour->onRequestingLock((long)mutex);
 //	return pthread_mutex_lock(mutex);
 }
-
-//int orig_pthread_mutex_unlock(pthread_mutex_t *mutex){
-//	return 1;
-//}
 
 int cine_mutex_unlock(pthread_mutex_t *mutex){
 	cerr << "releasing" << endl;
@@ -94,8 +87,8 @@ int cine_join(pthread_t thread, void **value_ptr){
 
 //thread registering
 void cine_initial_thread(){
-	pthread_t t = pthread_self();
-	threadEventsBehaviour->onThreadMainStart((long)t);
+	init_thread = pthread_self();
+	threadEventsBehaviour->onThreadMainStart((long)init_thread);
     pthread_mutex_lock(&cine_mutex);
 	thread_count++;
 	cerr << "initial " << pthread_self() << " # " << thread_count << endl;
@@ -125,27 +118,33 @@ void cine_init(){
 	}
 }
 
+int orig_thread_create(pthread_t *thread, const pthread_attr_t *attr,
+	                          void *(*start_routine) (void *), void *arg){
+	return 1; //fail if this code actually hits
+}
+
 int cine_thread_create(pthread_t *thread, const pthread_attr_t *attr,
 	                          void *(*start_routine) (void *), void *arg){
-    pthread_mutex_lock(&cine_mutex);
+//    pthread_mutex_lock(&cine_mutex);
 	int result = pthread_create(thread, attr, start_routine, arg);
-	//Hopefully there is no switch before this executes
-	if (!result){
-		threadEventsBehaviour->beforeCreatingThread((long) *thread);
-		thread_count++; //increment here since creation may be delayed
-		cerr << "before " << *thread << "# " << thread_count << endl;
-	}
-    pthread_mutex_unlock(&cine_mutex);
-	return result;
+//	//Hopefully there is no switch before this executes
+	threadEventsBehaviour->beforeCreatingThread((long) *thread);
+	thread_count++; //increment here since creation may be delayed
+	cerr << "before " << *thread << "# " << thread_count << endl;
+//    pthread_mutex_unlock(&cine_mutex);
+
+	return pthread_create(thread, attr, start_routine, arg);
+//	return 1;
 }
 
 void cine_start_thread(){
 	pthread_t thread = pthread_self();
 	char n[50];
 	pthread_getname_np(thread, n, sizeof(n));
+//	threadEventsBehaviour->afterCreatingThread(); //lets hope that this does not block
     pthread_mutex_lock(&cine_mutex); //hopefully this fixes context switching concerns from thread creation
-	threadEventsBehaviour->afterCreatingThread(); //lets hope that this does not block
-	cerr << "child " << pthread_self() << endl;
+    thread_count++;
+	cerr << "child " << thread << " #" << thread_count << endl;
     pthread_mutex_unlock(&cine_mutex);
 	threadEventsBehaviour->onStart((long)thread, n);
 }
@@ -173,19 +172,26 @@ void cine_teardown(){
 
 void cine_exit_thread(){
 	threadEventsBehaviour->onEnd();
+
     pthread_mutex_lock(&cine_mutex);
 	thread_count--;
 	cerr << "thread exited " << pthread_self() << " left: " << thread_count << endl;
-	if (!thread_count){
-		end_count--;
-		if(end_count == 0){
-			pthread_mutex_unlock(&cine_mutex);
-			cine_teardown();
-		}
+
+	pthread_mutex_unlock(&cine_mutex);
+	if(pthread_self() == init_thread){
+		cine_teardown();
 	}
-	//lets hope ending the simulator does not fail
-    pthread_mutex_unlock(&cine_mutex);
 	pthread_exit(0);
+//	if (!thread_count){
+//		if(end_count == 0){
+//			end_count++;
+//			pthread_mutex_unlock(&cine_mutex);
+//			cine_teardown();
+//		}
+//	}
+	//lets hope ending the simulator does not fail
+//    pthread_mutex_unlock(&cine_mutex);
+//	pthread_exit(0);
 }
 
 void cine_method_registration(char *name, int mid){

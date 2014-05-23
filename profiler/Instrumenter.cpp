@@ -84,7 +84,6 @@ bool Instrumenter::instrumentThreadEntry(BPatch_process*p, BPatch_thread *t){
 }
 
 bool Instrumenter::threadCreation(){
-//	BPatch_function *create = analyser->getFunction("pthread_create");
 //
 ////	BPatch_function *beforeCreate = analyser->getFunction("cine_before_create");
 ////	BPatch_paramExpr thread(0);
@@ -95,19 +94,30 @@ bool Instrumenter::threadCreation(){
 ////	vector<BPatch_point*> *entries = create->findPoint(BPatch_exit);
 ////	return(app->insertSnippet(beforeCall, *entries) != NULL);
 //
+
+//	BPatch_function *create = analyser->getFunction("pthread_create");
 //	BPatch_function *cineCreate = analyser->getFunction("cine_thread_create");
 //	BPatch_function *replaceCreate = analyser->getFunction("orig_thread_create");
-//	return wrapFunction(create, cineCreate, replaceCreate);
+//	return (wrapFunction(create, cineCreate, replaceCreate) &&
+//			threadStart());
 
-	BPatch_function *pcreate = analyser->getFunction("pthread_create");
-	BPatch_function *cineCreate = analyser->getFunction("cine_thread_create");
-	vector<BPatch_function *>fs;
-	analyser->getUsefulFunctions(fs);
-	return (replaceCalls(fs, pcreate, cineCreate) && threadStart());
+//	BPatch_function *cineCreate = analyser->getFunction("cine_notify_before_create");
+//	vector<BPatch_snippet *>args;
+//	BPatch_funcCallExpr createCall(cineCreate, args);
+//	vector<BPatch_point *>pts;
+//	pcreate->getExitPoints(pts);
+
+//	BPatch_function *pcreate = analyser->getFunction("pthread_create");
+//	BPatch_function *cineCreate = analyser->getFunction("cine_thread_create");
+//
+//	vector<BPatch_function *>fs;
+//	analyser->getUsefulFunctions(fs);
+//	return (replaceCalls(fs, pcreate, cineCreate) && threadStart());
+	return threadStart();
 }
 
 bool Instrumenter::threadDestruction() {
-	BPatch_function *exit = analyser->getFunction("exit");
+	BPatch_function *fExit = analyser->getFunction("exit");
 	BPatch_function *pexit = analyser->getFunction("pthread_exit");
 	BPatch_function *cineDestroy = analyser->getFunction("cine_exit_thread");
 	BPatch_function *cineDestroyAll = analyser->getFunction("cine_teardown");
@@ -115,7 +125,7 @@ bool Instrumenter::threadDestruction() {
 	vector<BPatch_function *>fs;
 	analyser->getUsefulFunctions(fs);
 	return (replaceCalls(fs, pexit, cineDestroy) &&
-			replaceCalls(fs, exit, cineDestroyAll));
+			replaceCalls(fs, fExit, cineDestroyAll));
 }
 
 bool Instrumenter::mainThreadCreation(){
@@ -625,10 +635,11 @@ bool Instrumenter::loadLibraries(){
 		return false;
 	}
 
-	if(!app->loadLibrary("libpthread.so.0")){
-		cerr << "target loading of pthread failed" << endl;
-		return false;
-	}
+	//this segfaults dyninst in dynamic mode
+//	if(!app->loadLibrary("libpthread.so.0")){
+//		cerr << "target loading of pthread failed" << endl;
+//		return false;
+//	}
 	return true;
 
 }
@@ -659,6 +670,7 @@ bool Instrumenter::finalFunction(string f){
 	}
 
 	exitPoints = exit->findPoint(BPatch_exit);
+
 	//unnecessary
 //	string exitName = "exit";
 //
