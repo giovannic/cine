@@ -30,40 +30,39 @@ pthread_mutex_t cine_mutex;
 //input mutexes
 
 int cine_mutex_lock(pthread_mutex_t *mutex){
-	cerr << "requesting" << endl;
+	cerr << "requesting " << (long)mutex << endl;
 	threadEventsBehaviour->onRequestingLock((long)mutex);
 //	return pthread_mutex_lock(mutex);
 }
 
 int cine_mutex_unlock(pthread_mutex_t *mutex){
-	cerr << "releasing" << endl;
+	cerr << "releasing " << (long)mutex << endl;
 	threadEventsBehaviour->onReleasingLock((long)mutex);
 //	return pthread_mutex_unlock(mutex);
 }
 
 int cine_cond_wait(pthread_cond_t *cond, pthread_mutex_t *mutex){
-	cerr << "waiting cond" << endl;
+	cerr << "waiting cond " << (long)mutex << (long)cond << endl;
 	threadEventsBehaviour->onReplacedWaiting((long)cond, true);
 //	return pthread_cond_wait(cond, mutex);
 }
 
 int cine_cond_timedwait(pthread_cond_t *cond,
 		pthread_mutex_t *mutex, const struct timespec *abstime){
-	cerr << "waiting time" << endl;
+	cerr << "waiting time " << (long)mutex << (long)cond << endl;
 	threadEventsBehaviour->beforeReleasingLockOfAnyReplacedWaiting((long)mutex, true);
 	threadEventsBehaviour->onReplacedTimedWaiting((long)cond, abstime->tv_sec, abstime->tv_nsec, true);
 //	return pthread_cond_timedwait(cond, mutex, abstime);
 }
 
 int cine_cond_broadcast(pthread_cond_t *cond){
-	cerr << "broadcast" << endl;
+	cerr << "broadcast " << (long)cond << endl;
 	threadEventsBehaviour->onSignallingOnObject((long)cond);
 //	return pthread_cond_signal(cond);
 }
 
-int cine_cond_signal(pthread_cond_t *cond,
-		pthread_mutex_t *mutex, const struct timespec *abstime){
-	cerr << "signal" << endl;
+int cine_cond_signal(pthread_cond_t *cond){
+	cerr << "signal " << (long)cond << endl;
 	threadEventsBehaviour->onBroadcastingOnObject((long)cond);
 //	return pthread_cond_broadcast(cond);
 }
