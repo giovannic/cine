@@ -95,11 +95,11 @@ bool Instrumenter::threadCreation(){
 ////	return(app->insertSnippet(beforeCall, *entries) != NULL);
 //
 
-//	BPatch_function *create = analyser->getFunction("pthread_create");
-//	BPatch_function *cineCreate = analyser->getFunction("cine_thread_create");
-//	BPatch_function *replaceCreate = analyser->getFunction("orig_thread_create");
-//	return (wrapFunction(create, cineCreate, replaceCreate) &&
-//			threadStart());
+	BPatch_function *create = analyser->getFunction("pthread_create");
+	BPatch_function *cineCreate = analyser->getFunction("cine_thread_create");
+	BPatch_function *replaceCreate = analyser->getFunction("orig_thread_create");
+	return (wrapFunction(create, cineCreate, replaceCreate) &&
+			threadStart());
 
 //	BPatch_function *cineCreate = analyser->getFunction("cine_notify_before_create");
 //	vector<BPatch_snippet *>args;
@@ -113,7 +113,7 @@ bool Instrumenter::threadCreation(){
 //	vector<BPatch_function *>fs;
 //	analyser->getUsefulFunctions(fs);
 //	return (replaceCalls(fs, pcreate, cineCreate) && threadStart());
-	return threadStart();
+//	return threadStart();
 }
 
 bool Instrumenter::threadDestruction() {

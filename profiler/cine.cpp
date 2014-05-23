@@ -127,7 +127,8 @@ int orig_thread_create(pthread_t *thread, const pthread_attr_t *attr,
 int cine_thread_create(pthread_t *thread, const pthread_attr_t *attr,
 	                          void *(*start_routine) (void *), void *arg){
 	int result = orig_thread_create(thread, attr, start_routine, arg);
-//	//Hopefully there is no switch before this executes
+
+	//Hopefully there is no switch before this executes
 	threadEventsBehaviour->beforeCreatingThread((long) *thread);
     pthread_mutex_lock(&cine_mutex);
 	thread_count++; //increment here since creation may be delayed
@@ -143,7 +144,6 @@ void cine_start_thread(){
 	pthread_getname_np(thread, n, sizeof(n));
 	threadEventsBehaviour->afterCreatingThread(); //lets hope that this does not block
     pthread_mutex_lock(&cine_mutex); //hopefully this fixes context switching concerns from thread creation
-    thread_count++;
 	cerr << "child " << thread << " #" << thread_count << endl;
     pthread_mutex_unlock(&cine_mutex);
 	threadEventsBehaviour->onStart((long)thread, n);
