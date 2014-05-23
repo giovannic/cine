@@ -50,6 +50,7 @@ int cine_cond_wait(pthread_cond_t *cond, pthread_mutex_t *mutex){
 int cine_cond_timedwait(pthread_cond_t *cond,
 		pthread_mutex_t *mutex, const struct timespec *abstime){
 	cerr << "waiting time" << endl;
+	threadEventsBehaviour->beforeReleasingLockOfAnyReplacedWaiting((long)mutex, true);
 	threadEventsBehaviour->onReplacedTimedWaiting((long)cond, abstime->tv_sec, abstime->tv_nsec, true);
 //	return pthread_cond_timedwait(cond, mutex, abstime);
 }
@@ -125,31 +126,28 @@ int orig_thread_create(pthread_t *thread, const pthread_attr_t *attr,
 
 int cine_thread_create(pthread_t *thread, const pthread_attr_t *attr,
 	                          void *(*start_routine) (void *), void *arg){
-//    pthread_mutex_lock(&cine_mutex);
-	int result = pthread_create(thread, attr, start_routine, arg);
+	int result = orig_thread_create(thread, attr, start_routine, arg);
 //	//Hopefully there is no switch before this executes
 	threadEventsBehaviour->beforeCreatingThread((long) *thread);
+    pthread_mutex_lock(&cine_mutex);
 	thread_count++; //increment here since creation may be delayed
 	cerr << "before " << *thread << "# " << thread_count << endl;
-//    pthread_mutex_unlock(&cine_mutex);
+    pthread_mutex_unlock(&cine_mutex);
 
-	return pthread_create(thread, attr, start_routine, arg);
-//	return 1;
+	return result;
 }
 
 void cine_start_thread(){
 	pthread_t thread = pthread_self();
 	char n[50];
 	pthread_getname_np(thread, n, sizeof(n));
-//	threadEventsBehaviour->afterCreatingThread(); //lets hope that this does not block
+	threadEventsBehaviour->afterCreatingThread(); //lets hope that this does not block
     pthread_mutex_lock(&cine_mutex); //hopefully this fixes context switching concerns from thread creation
     thread_count++;
 	cerr << "child " << thread << " #" << thread_count << endl;
     pthread_mutex_unlock(&cine_mutex);
 	threadEventsBehaviour->onStart((long)thread, n);
 }
-
-
 
 void cine_timer_entry(int id){
 	cerr << "entry " << id << " " <<  pthread_self() << endl;
@@ -181,6 +179,7 @@ void cine_exit_thread(){
 	if(pthread_self() == init_thread){
 		cine_teardown();
 	}
+
 	pthread_exit(0);
 //	if (!thread_count){
 //		if(end_count == 0){
