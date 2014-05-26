@@ -126,11 +126,11 @@ int orig_thread_create(pthread_t *thread, const pthread_attr_t *attr,
 
 int cine_thread_create(pthread_t *thread, const pthread_attr_t *attr,
 	                          void *(*start_routine) (void *), void *arg){
-	int result = orig_thread_create(thread, attr, start_routine, arg);
 
+    pthread_mutex_lock(&cine_mutex);
+	int result = orig_thread_create(thread, attr, start_routine, arg);
 	//Hopefully there is no switch before this executes
 	threadEventsBehaviour->beforeCreatingThread((long) *thread);
-    pthread_mutex_lock(&cine_mutex);
 	thread_count++; //increment here since creation may be delayed
 	cerr << "before " << *thread << "# " << thread_count << endl;
     pthread_mutex_unlock(&cine_mutex);
@@ -142,11 +142,14 @@ void cine_start_thread(){
 	pthread_t thread = pthread_self();
 	char n[50];
 	pthread_getname_np(thread, n, sizeof(n));
+
+    pthread_mutex_lock(&cine_mutex);
 	threadEventsBehaviour->afterCreatingThread(); //lets hope that this does not block
-    pthread_mutex_lock(&cine_mutex); //hopefully this fixes context switching concerns from thread creation
-	cerr << "child " << thread << " #" << thread_count << endl;
-    pthread_mutex_unlock(&cine_mutex);
+    //append a number onto the end for easy reference
+    sprintf(n + strlen(n) - 1 , " %lu", thread);
+	cerr << "child " << n << " #" << thread_count << endl;
 	threadEventsBehaviour->onStart((long)thread, n);
+    pthread_mutex_unlock(&cine_mutex);
 }
 
 void cine_timer_entry(int id){
@@ -174,8 +177,8 @@ void cine_exit_thread(){
     pthread_mutex_lock(&cine_mutex);
 	thread_count--;
 	cerr << "thread exited " << pthread_self() << " left: " << thread_count << endl;
-
 	pthread_mutex_unlock(&cine_mutex);
+
 	if(pthread_self() == init_thread){
 		cine_teardown();
 	}
