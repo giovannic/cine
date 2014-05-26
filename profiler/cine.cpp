@@ -42,14 +42,15 @@ int cine_mutex_unlock(pthread_mutex_t *mutex){
 }
 
 int cine_cond_wait(pthread_cond_t *cond, pthread_mutex_t *mutex){
-	cerr << "waiting cond " << (long)mutex << (long)cond << endl;
+	cerr << "waiting cond " << (long)mutex << " " << (long)cond << endl;
+	threadEventsBehaviour->beforeReleasingLockOfAnyReplacedWaiting((long)mutex, true);
 	threadEventsBehaviour->onReplacedWaiting((long)cond, true);
 //	return pthread_cond_wait(cond, mutex);
 }
 
 int cine_cond_timedwait(pthread_cond_t *cond,
 		pthread_mutex_t *mutex, const struct timespec *abstime){
-	cerr << "waiting time " << (long)mutex << (long)cond << endl;
+	cerr << "waiting time " << (long)mutex << " " << (long)cond << endl;
 	threadEventsBehaviour->beforeReleasingLockOfAnyReplacedWaiting((long)mutex, true);
 	threadEventsBehaviour->onReplacedTimedWaiting((long)cond, abstime->tv_sec, abstime->tv_nsec, true);
 //	return pthread_cond_timedwait(cond, mutex, abstime);
