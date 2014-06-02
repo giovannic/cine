@@ -11,6 +11,12 @@
 #include <pthread.h>
 #include <iostream>
 #include "VTF.h"
+#include "cine.h"
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <sys/errno.h>
+#include <errno.h>
+#include <fcntl.h>
 
 //TODO:put this all into a namespace
 
@@ -20,6 +26,9 @@ using namespace VEX;
 long thread_count = 0;
 long end_count = 0;
 bool initialised = false;
+
+const char *pipefile = "/tmp/cineinv";
+int inv_fifo;
 
 pthread_t init_thread;
 pthread_mutex_t cine_mutex;
@@ -43,28 +52,28 @@ int cine_mutex_unlock(pthread_mutex_t *mutex){
 
 int cine_cond_wait(pthread_cond_t *cond, pthread_mutex_t *mutex){
 	cerr << "waiting cond " << (long)mutex << " " << (long)cond << endl;
-	threadEventsBehaviour->beforeReleasingLockOfAnyReplacedWaiting((long)mutex, true);
-	threadEventsBehaviour->onReplacedWaiting((long)cond, true);
+	threadEventsBehaviour->beforeReleasingLockOfAnyReplacedWaiting((long) cond, (long)mutex, true);
+	threadEventsBehaviour->onReplacedWaiting((long)cond, (long)mutex, true);
 //	return pthread_cond_wait(cond, mutex);
 }
 
 int cine_cond_timedwait(pthread_cond_t *cond,
 		pthread_mutex_t *mutex, const struct timespec *abstime){
 	cerr << "waiting time " << (long)mutex << " " << (long)cond << endl;
-	threadEventsBehaviour->beforeReleasingLockOfAnyReplacedWaiting((long)mutex, true);
-	threadEventsBehaviour->onReplacedTimedWaiting((long)cond, abstime->tv_sec, abstime->tv_nsec, true);
+	threadEventsBehaviour->beforeReleasingLockOfAnyReplacedWaiting((long)cond, (long)mutex, true);
+	threadEventsBehaviour->onReplacedTimedWaiting((long)cond, (long)mutex, abstime->tv_sec, abstime->tv_nsec, true);
 //	return pthread_cond_timedwait(cond, mutex, abstime);
 }
 
 int cine_cond_broadcast(pthread_cond_t *cond){
 	cerr << "broadcast " << (long)cond << endl;
-	threadEventsBehaviour->onSignallingOnObject((long)cond);
+	threadEventsBehaviour->onBroadcastingOnObject((long)cond);
 //	return pthread_cond_signal(cond);
 }
 
 int cine_cond_signal(pthread_cond_t *cond){
 	cerr << "signal " << (long)cond << endl;
-	threadEventsBehaviour->onBroadcastingOnObject((long)cond);
+	threadEventsBehaviour->onSignallingOnObject((long)cond);
 //	return pthread_cond_broadcast(cond);
 }
 
@@ -113,6 +122,7 @@ void cine_init(){
 		cine_new_thread();
 	} else {
 		pthread_mutex_init(&cine_mutex, NULL);
+		inv_fifo = open(pipefile, O_RDWR);
 		initializeSimulator(NULL);
 		cine_initial_thread();
 		initialised = true;
@@ -124,10 +134,13 @@ int orig_thread_create(pthread_t *thread, const pthread_attr_t *attr,
 	return 1; //fail if this code actually hits
 }
 
-int cine_thread_create(pthread_t *thread, const pthread_attr_t *attr,
+int cine_wrap_thread_create(pthread_t *thread, const pthread_attr_t *attr,
 	                          void *(*start_routine) (void *), void *arg){
 
+	printf("function start %p\n", start_routine);
+
     pthread_mutex_lock(&cine_mutex);
+//	int result = orig_thread_create(thread, attr, start_routine, arg);
 	int result = orig_thread_create(thread, attr, start_routine, arg);
 	//Hopefully there is no switch before this executes
 	threadEventsBehaviour->beforeCreatingThread((long) *thread);
@@ -137,6 +150,23 @@ int cine_thread_create(pthread_t *thread, const pthread_attr_t *attr,
 
 	return result;
 }
+
+int cine_thread_create(pthread_t *thread, const pthread_attr_t *attr,
+	                          void *(*start_routine) (void *), void *arg){
+
+    pthread_mutex_lock(&cine_mutex);
+//	int result = orig_thread_create(thread, attr, start_routine, arg);
+	int result = pthread_create(thread, attr, start_routine, arg);
+	//Hopefully there is no switch before this executes
+	threadEventsBehaviour->beforeCreatingThread((long) *thread);
+	thread_count++; //increment here since creation may be delayed
+	cerr << "before " << *thread << "# " << thread_count << endl;
+    pthread_mutex_unlock(&cine_mutex);
+
+	return result;
+}
+
+
 
 void cine_start_thread(){
 	pthread_t thread = pthread_self();
@@ -154,6 +184,7 @@ void cine_start_thread(){
 
 void cine_timer_entry(int id){
 	cerr << "entry " << id << " " <<  pthread_self() << endl;
+	//recursive methods do not matter
 	methodEventsBehaviour->afterMethodEntry(id);
 }
 
@@ -162,10 +193,27 @@ void cine_timer_exit(int id){
 	methodEventsBehaviour->beforeMethodExit(id);
 }
 
+void cine_timer_invalidate_exit(int id){
+	cerr << "exit " << id << " " <<  pthread_self() << endl;
+	if(methodEventsBehaviour->beforeMethodExit(id)){
+		char mid[5];
+		char inv[5];
+		sprintf(mid, "%d", id);
+		if(write(inv_fifo, mid, sizeof(mid)) < 0){
+			cerr << "write failed" << endl;
+		}
+		while(mid != inv){
+			read(inv_fifo, inv, sizeof(inv));
+			cerr << "not clear to continue" << endl;
+		}
+	}
+}
+
 void cine_teardown(){
 	cerr << "ending all threads and getting results" << endl;
 	//TODO: make sure all threads exit
 	endSimulator();
+	close(inv_fifo);
 	exit(0);
 }
 
@@ -199,4 +247,8 @@ void cine_exit_thread(){
 void cine_method_registration(char *name, int mid){
 	cerr << "registering " << mid << endl;
 	eventLogger->registerMethod(name, mid);
+}
+
+void print_address(void *dest){
+	cerr << "destination " << dest << endl;
 }

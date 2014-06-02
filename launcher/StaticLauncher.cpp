@@ -49,16 +49,20 @@ bool StaticLauncher::setup(){
 		return false;
 	}
 
+	if(!inst->loadPthreads()){
+		cerr << "libraries did not load" << endl;
+		return false;
+	}
 
 	if(!inst->initCalls()){
 		cerr << "init calls failed" << endl;
 		return false;
 	}
 
-	if(!inst->insertThreadCalls()){
-		cerr << "thread calls failed" << endl;
-		return false;
-	}
+//	if(!inst->insertThreadCalls()){
+//		cerr << "thread calls failed" << endl;
+//		return false;
+//	}
 
 	if(!inst->instrumentExit()){
 		cout << "no explicit exit point falling back on thread counting" << endl;

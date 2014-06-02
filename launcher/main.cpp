@@ -12,6 +12,7 @@
 int main(int argc, char* argv[]) {
 	//TODO: validate and add program arguments
 	string input(argv[1]);
+//	DynamicLauncher(input).launch();
 	DynamicLauncher(input).launch();
 	exit(0);
 }

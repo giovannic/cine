@@ -10,6 +10,7 @@
 
 #include "Instrumenter.h"
 #include "Analyser.h"
+#include "Listener.h"
 #include "BPatch_process.h"
 #include "Event.h"
 
@@ -25,10 +26,13 @@ public:
 	bool registerThreadStart(Dyninst::Address a);
 	bool beginSimulator();
 	bool registerMethods();
+	bool listenInvalidation();
+	void cleanupListener();
 private:
 	Instrumenter *inst;
 	BPatch_process *proc;
 	Analyser *analyser;
+	Listener *listener;
 };
 
 #endif /* CONTROLLER_H_ */

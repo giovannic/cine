@@ -24,7 +24,9 @@ public:
 	bool initCalls();
     bool insertThreadCalls();
     bool loadLibraries();
+    bool loadPthreads();
     bool timeFunction(BPatch_function *f, int methodId);
+	bool timeFunctionInvalidating(BPatch_function *f, int methodId);
 	bool timeFunctionCalls(BPatch_function *f, int methodId);
     bool instrumentThreadEntry(BPatch_thread *t);
     bool mainThreadCreation();
@@ -35,6 +37,7 @@ public:
     bool instrumentContention();
     bool threadCreation();
     bool threadDestruction();
+    bool debugStart();
 private:
     bool instrumentThreadEntry(BPatch_function *entryFunction);
     bool instrumentThreadEntry(BPatch_function *entryFunction,
@@ -54,6 +57,8 @@ private:
 		BPatch_function *oldF, BPatch_function *newF);
 	bool replaceCalls(vector<BPatch_function *> &fs,
 		vector<BPatch_function *>&oldF, BPatch_function *newF);
+	bool timeFunction(BPatch_function *f, int methodId,
+		BPatch_function *timerStart, BPatch_function *timerStop);
 };
 
 #endif /* INSTRUMENTER_HPP_ */

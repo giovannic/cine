@@ -85,18 +85,25 @@ bool DynamicLauncher::setup(){
 		return false;
 	}
 
+//	inst->debugStart();
+
 	if(!inst->threadCreation()){
 		cerr << "thread creation failed" << endl;
 		return false;
 	}
-
+//
 	if(!inst->threadDestruction()){
 		cerr << "thread destruction failed" << endl;
 		return false;
 	}
-
+//
 	if(!inst->instrumentContention()){
 		cerr << "contention failed" << endl;
+		return false;
+	}
+
+	if(!ctrl->listenInvalidation()){
+		cerr << "invalidation failed" << endl;
 		return false;
 	}
 

@@ -17,14 +17,14 @@ dyninstLibs = ['dyninstAPI', 'common', 'symtabAPI', 'instructionAPI', 'parseAPI'
 test_env = Environment(LIBPATH = [dwarf, dyninstlib, vexlib, vexagentlib], CCFLAGS='-g')
 
 #this really needs to be separated
-test_env.Append(LIBS= dyninstLibs +  ['vex', 'JVMTIAgent', 'papi'])
+test_env.Append(LIBS= dyninstLibs +  ['vex', 'JVMTIAgent', 'papi', 'pthread'])
 test_env.Append(CPPPATH=['ctests/h', 'launcher/h', 'profiler/h', dyninstinc, vexinc])
 
 #test defines
 bins = '\\"%s\\"' % Dir('ctests/testinputs').abspath
 test_env.Append(CPPDEFINES={'BIN_PATH': bins})
 
-supporting_sources = ['launcher/DynamicLauncher.cpp', 'launcher/StaticLauncher.cpp', 'launcher/Launcher.cpp', 'profiler/Instrumenter.cpp', 'profiler/Controller.cpp', 'profiler/Analyser.cpp']
+supporting_sources = ['launcher/DynamicLauncher.cpp', 'launcher/StaticLauncher.cpp', 'launcher/Launcher.cpp', 'profiler/Instrumenter.cpp', 'profiler/Controller.cpp', 'profiler/Analyser.cpp', 'profiler/Listener.cpp']
 launcher_test_sources = ['ctests/launcher_test.cpp'] + supporting_sources
 test_env.Program('bin/tests/launcher_test', launcher_test_sources)
 instrument_test_sources = ['ctests/instrument_test.cpp'] + supporting_sources

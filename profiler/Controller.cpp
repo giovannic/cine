@@ -22,9 +22,13 @@ Controller::Controller(Instrumenter *inst, Analyser *a, BPatch_process *proc){
 	this->proc = proc;
 	this->inst = inst;
 	this->analyser = a;
+	listener = NULL;
 }
 
 Controller::~Controller() {
+	if(listener != NULL){
+		delete listener;
+	}
 }
 
 BPatch_thread *Controller::getEventThread(Event::const_ptr e){
@@ -93,7 +97,7 @@ bool Controller::registerMethods(){
 			return false;
 		}
 
-		inst->timeFunction(f, mid);
+		inst->timeFunctionInvalidating(f, mid);
 //		inst->timeFunctionCalls(f, mid);
 
 		mid++;
@@ -117,4 +121,9 @@ void Controller::getResults() {
 	if(err){
 		cerr << "some onetime code error on exit " << endl;
 	}
+}
+
+bool Controller::listenInvalidation() {
+	listener = new Listener();
+	return true;
 }

@@ -119,10 +119,13 @@ BPatch_point *Analyser::hasCall(BPatch_function *f, BPatch_function *calleeF){
 	vector<BPatch_point *>calls;
 	f->getCallPoints(calls);
 
-//	cout << "calls found: " << calls.size() << endl;
 	for(vector<BPatch_point *>::const_iterator c = calls.begin();
 			c != calls.end(); c++){
 		BPatch_point *cp = *c;
+		if(cp == NULL){
+			//this is broken for static execution
+			return NULL;
+		}
 		BPatch_function *callee = cp->getCalledFunction();
 		if(callee != NULL && (callee->getDemangledName() == calleeF->getDemangledName())){
 			return cp;
