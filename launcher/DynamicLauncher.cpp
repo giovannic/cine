@@ -6,16 +6,21 @@
  */
 
 #include "DynamicLauncher.h"
+#include "AsyncListener.h"
 
 DynamicLauncher::DynamicLauncher(string &input):Launcher(input) {
 	this->app = createProcess();
 	this->analyser = new Analyser(app->getImage());
 	this->inst = new Instrumenter(analyser, app);
 	this->ctrl = new Controller(inst, analyser, app);
+	listener = new AsyncListener(bpatch);
 	setup();
 }
 
 DynamicLauncher::~DynamicLauncher() {
+	delete analyser;
+	delete inst;
+	delete ctrl;
 }
 
 BPatch_process *DynamicLauncher::createProcess(){
@@ -102,10 +107,10 @@ bool DynamicLauncher::setup(){
 		return false;
 	}
 
-	if(!ctrl->listenInvalidation()){
-		cerr << "invalidation failed" << endl;
-		return false;
-	}
+//	if(!listener->listen()){
+//		cerr << "invalidation failed" << endl;
+//		return false;
+//	}
 
 	//this causes a segfault as dyninst searches for lib=""
 //	ctrl->listenResults();

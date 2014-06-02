@@ -10,6 +10,7 @@
 
 #include "Launcher.h"
 #include "Controller.h"
+#include "Listener.h"
 
 class DynamicLauncher: public Launcher {
 public:
@@ -19,6 +20,7 @@ public:
 private:
 	BPatch_process *app;
 	Controller *ctrl;
+	Listener *listener;
 	BPatch_process *createProcess();
 	void listenResults();
 	bool setup();

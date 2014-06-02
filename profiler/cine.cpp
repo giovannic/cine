@@ -12,11 +12,8 @@
 #include <iostream>
 #include "VTF.h"
 #include "cine.h"
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <sys/errno.h>
-#include <errno.h>
-#include <fcntl.h>
+#include "CineMessage.h"
+#include "dyninstRTExport.h"
 
 //TODO:put this all into a namespace
 
@@ -122,7 +119,6 @@ void cine_init(){
 		cine_new_thread();
 	} else {
 		pthread_mutex_init(&cine_mutex, NULL);
-		inv_fifo = open(pipefile, O_RDWR);
 		initializeSimulator(NULL);
 		cine_initial_thread();
 		initialised = true;
@@ -195,16 +191,11 @@ void cine_timer_exit(int id){
 
 void cine_timer_invalidate_exit(int id){
 	cerr << "exit " << id << " " <<  pthread_self() << endl;
-	if(methodEventsBehaviour->beforeMethodExit(id)){
-		char mid[5];
-		char inv[5];
-		sprintf(mid, "%d", id);
-		if(write(inv_fifo, mid, sizeof(mid)) < 0){
-			cerr << "write failed" << endl;
-		}
-		while(mid != inv){
-			read(inv_fifo, inv, sizeof(inv));
-			cerr << "not clear to continue" << endl;
+	if(methodEventsBehaviour->beforeMethodExit(id) || true){
+		InvMsg_t *msg = new InvMsg();
+		msg->mid = id;
+		if (DYNINSTuserMessage(msg, id) != 0){
+			cerr << "message failed" << endl;
 		}
 	}
 }
@@ -252,3 +243,20 @@ void cine_method_registration(char *name, int mid){
 void print_address(void *dest){
 	cerr << "destination " << dest << endl;
 }
+
+//		char mid[5];
+//		char inv[5];
+//		sprintf(mid, "%d", id);
+//		if(write(inv_fifo, mid, sizeof(mid)) < 0){
+//			cerr << "write failed" << endl;
+//		}
+//		while(mid != inv){
+//			read(inv_fifo, inv, sizeof(inv));
+//		}
+//#include <sys/types.h>
+//#include <sys/stat.h>
+//#include <sys/errno.h>
+//#include <errno.h>
+//#include <fcntl.h>
+
+//		inv_fifo = open(pipefile, O_RDWR);

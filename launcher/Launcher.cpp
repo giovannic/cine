@@ -26,7 +26,6 @@ Launcher::Launcher(string &input){
 	this->args = new vector<string>();
 	this->args->push_back(input);
 	bpatch = new BPatch();
-
 }
 
 Launcher::~Launcher(){

@@ -14,7 +14,7 @@ class Listener {
 public:
 	Listener();
 	virtual ~Listener();
-	void listen();
+	virtual bool listen();
 private:
 	pthread_t listener;
 	int invFifo;

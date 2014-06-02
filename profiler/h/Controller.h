@@ -26,7 +26,6 @@ public:
 	bool registerThreadStart(Dyninst::Address a);
 	bool beginSimulator();
 	bool registerMethods();
-	bool listenInvalidation();
 	void cleanupListener();
 private:
 	Instrumenter *inst;

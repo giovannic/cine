@@ -6,6 +6,7 @@
  */
 
 #include "Controller.h"
+#include "AsyncListener.h"
 
 #include "callbacks.h"
 
@@ -97,8 +98,8 @@ bool Controller::registerMethods(){
 			return false;
 		}
 
-		inst->timeFunctionInvalidating(f, mid);
-//		inst->timeFunctionCalls(f, mid);
+//		inst->timeFunctionInvalidating(f, mid);
+		inst->timeFunctionCalls(f, mid);
 
 		mid++;
 	}
@@ -121,9 +122,4 @@ void Controller::getResults() {
 	if(err){
 		cerr << "some onetime code error on exit " << endl;
 	}
-}
-
-bool Controller::listenInvalidation() {
-	listener = new Listener();
-	return true;
 }
