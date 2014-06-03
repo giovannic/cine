@@ -23,19 +23,10 @@ using namespace Dyninst;
 
 Launcher::Launcher(string &input){
 	this->input = new string(input);
-	this->args = new vector<string>();
-	this->args->push_back(input);
 	bpatch = new BPatch();
 }
 
 Launcher::~Launcher(){
 	delete input;
-	delete args;
 	delete bpatch;
-}
-
-void Launcher::add_arguments(string &args){
-	//TODO parse arguments
-	//there can only be one
-	this->args->push_back(args);
 }

@@ -8,7 +8,8 @@
 #include "DynamicLauncher.h"
 #include "AsyncListener.h"
 
-DynamicLauncher::DynamicLauncher(string &input):Launcher(input) {
+DynamicLauncher::DynamicLauncher(string &input, vector<string *> *args):Launcher(input) {
+	this->args = args;
 	this->app = createProcess();
 	this->analyser = new Analyser(app->getImage());
 	this->inst = new Instrumenter(analyser, app);
@@ -25,9 +26,9 @@ DynamicLauncher::~DynamicLauncher() {
 
 BPatch_process *DynamicLauncher::createProcess(){
 	vector<const char *>argv;
-	for( std::vector<string>::const_iterator i = args->begin();
+	for( std::vector<string*>::const_iterator i = args->begin();
 			i != args->end(); ++i){
-	    argv.push_back(i->c_str());
+	    argv.push_back((*i)->c_str());
 	}
 	argv.push_back(NULL);
 

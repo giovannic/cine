@@ -99,7 +99,8 @@ bool Controller::registerMethods(){
 		}
 
 //		inst->timeFunctionInvalidating(f, mid);
-		inst->timeFunctionCalls(f, mid);
+		inst->timeFunction(f, mid);
+//		inst->timeFunctionCalls(f, mid);
 
 		mid++;
 	}

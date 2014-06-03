@@ -17,13 +17,11 @@ public:
 	Launcher(string &input);
 	virtual ~Launcher();
 	virtual bool launch()=0;
-	void add_arguments(string &args);
 protected:
 	Instrumenter *inst;
 	Analyser *analyser;
 
 	string *input;
-	vector<string> *args;
 
 	BPatch *bpatch;
 };

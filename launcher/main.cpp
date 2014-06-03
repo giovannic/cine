@@ -12,7 +12,19 @@
 int main(int argc, char* argv[]) {
 	//TODO: validate and add program arguments
 	string input(argv[1]);
-//	DynamicLauncher(input).launch();
-	DynamicLauncher(input).launch();
+	vector<string *> args;
+
+	if(argc > 1){
+		string *arg;
+		for(int a = 1; a < argc; a++){
+			arg = new string(argv[a]);
+			args.push_back(arg);
+		}
+	}
+	DynamicLauncher l(input, &args);
+
+	l.setup();
+	l.launch();
+
 	exit(0);
 }

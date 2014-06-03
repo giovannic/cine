@@ -30,10 +30,10 @@ TEST_CASE( "Create process", "[loader]" ) {
 	SECTION("with arguments"){
 
 		string echo("/bin/echo");
-		string args("hello world");
+		vector<string *>args;
+		args.push_back(new string ("hello world"));
 
-		StaticLauncher l(echo);
-		l.add_arguments(args);
+		DynamicLauncher l(echo, &args);
 
 		REQUIRE(l.launch()); //no errors
 
@@ -43,7 +43,8 @@ TEST_CASE( "Create process", "[loader]" ) {
 		//basic
 		string testpath(BIN_PATH);
 		string threadfile = testpath + "/threads";
-		DynamicLauncher l(threadfile);
+		vector<string *>args;
+		DynamicLauncher l(threadfile, &args);
 
 		REQUIRE(l.launch()); //no errors
 	}

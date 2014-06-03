@@ -14,16 +14,17 @@
 
 class DynamicLauncher: public Launcher {
 public:
-	DynamicLauncher(string &input);
+	DynamicLauncher(string &input, vector<string *> *args);
 	virtual ~DynamicLauncher();
 	bool launch();
+	bool setup();
 private:
+	vector<string *> *args;
 	BPatch_process *app;
 	Controller *ctrl;
 	Listener *listener;
 	BPatch_process *createProcess();
 	void listenResults();
-	bool setup();
 };
 
 #endif /* DYNAMICLAUNCHER_H_ */

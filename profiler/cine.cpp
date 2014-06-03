@@ -12,6 +12,7 @@
 #include <iostream>
 #include "VTF.h"
 #include "cine.h"
+#include "debug.h"
 #include "CineMessage.h"
 #include "dyninstRTExport.h"
 
@@ -36,19 +37,19 @@ pthread_mutex_t cine_mutex;
 //input mutexes
 
 int cine_mutex_lock(pthread_mutex_t *mutex){
-	cerr << "requesting " << (long)mutex << endl;
+	DEBUG_PRINT(("requesting %lu \n", (long)mutex));
 	threadEventsBehaviour->onRequestingLock((long)mutex);
 //	return pthread_mutex_lock(mutex);
 }
 
 int cine_mutex_unlock(pthread_mutex_t *mutex){
-	cerr << "releasing " << (long)mutex << endl;
+	DEBUG_PRINT(("releasing %lu \n", (long)mutex));
 	threadEventsBehaviour->onReleasingLock((long)mutex);
 //	return pthread_mutex_unlock(mutex);
 }
 
 int cine_cond_wait(pthread_cond_t *cond, pthread_mutex_t *mutex){
-	cerr << "waiting cond " << (long)mutex << " " << (long)cond << endl;
+	DEBUG_PRINT(("waiting cond %lu %lu \n", (long)mutex, (long)cond));
 	threadEventsBehaviour->beforeReleasingLockOfAnyReplacedWaiting((long) cond, (long)mutex, true);
 	threadEventsBehaviour->onReplacedWaiting((long)cond, (long)mutex, true);
 //	return pthread_cond_wait(cond, mutex);
@@ -56,38 +57,38 @@ int cine_cond_wait(pthread_cond_t *cond, pthread_mutex_t *mutex){
 
 int cine_cond_timedwait(pthread_cond_t *cond,
 		pthread_mutex_t *mutex, const struct timespec *abstime){
-	cerr << "waiting time " << (long)mutex << " " << (long)cond << endl;
+	DEBUG_PRINT(("waiting timed %lu %lu \n", (long)mutex, (long)cond));
 	threadEventsBehaviour->beforeReleasingLockOfAnyReplacedWaiting((long)cond, (long)mutex, true);
 	threadEventsBehaviour->onReplacedTimedWaiting((long)cond, (long)mutex, abstime->tv_sec, abstime->tv_nsec, true);
 //	return pthread_cond_timedwait(cond, mutex, abstime);
 }
 
 int cine_cond_broadcast(pthread_cond_t *cond){
-	cerr << "broadcast " << (long)cond << endl;
+	DEBUG_PRINT(("broadcast %lu \n", (long)cond));
 	threadEventsBehaviour->onBroadcastingOnObject((long)cond);
 //	return pthread_cond_signal(cond);
 }
 
 int cine_cond_signal(pthread_cond_t *cond){
-	cerr << "signal " << (long)cond << endl;
+	DEBUG_PRINT(("signal %lu \n", (long)cond));
 	threadEventsBehaviour->onSignallingOnObject((long)cond);
 //	return pthread_cond_broadcast(cond);
 }
 
 int cine_sleep(unsigned int t){
-	cerr << "sleep" << endl;
+	DEBUG_PRINT(("sleep %d \n", t));
 	threadEventsBehaviour->onSleep(t, 0);
 //	return sleep(t);
 }
 
 int cine_yield(){
-	cerr << "yield" << endl;
+	DEBUG_PRINT(("yield \n"));
 	threadEventsBehaviour->onYield();
 //	return pthread_yield();
 }
 
 int cine_join(pthread_t thread, void **value_ptr){
-	cerr << "join" << endl;
+	DEBUG_PRINT(("join \n"));
 	threadEventsBehaviour->onJoin((long)thread);
 //	return pthread_join(thread, value_ptr);
 }
@@ -98,7 +99,7 @@ void cine_initial_thread(){
 	threadEventsBehaviour->onThreadMainStart((long)init_thread);
     pthread_mutex_lock(&cine_mutex);
 	thread_count++;
-	cerr << "initial " << pthread_self() << " # " << thread_count << endl;
+	DEBUG_PRINT(("initial %lu # %d\n", init_thread, thread_count));
     pthread_mutex_unlock(&cine_mutex);
 }
 
@@ -109,7 +110,7 @@ void cine_new_thread(){
 	threadEventsBehaviour->onStart((long)t, n);
     pthread_mutex_lock(&cine_mutex);
 	thread_count++;
-	cerr << "new " << pthread_self() << " # " << thread_count << endl;
+	DEBUG_PRINT(("new %lu # %d\n", t, thread_count));
     pthread_mutex_unlock(&cine_mutex);
 }
 
@@ -133,15 +134,13 @@ int orig_thread_create(pthread_t *thread, const pthread_attr_t *attr,
 int cine_wrap_thread_create(pthread_t *thread, const pthread_attr_t *attr,
 	                          void *(*start_routine) (void *), void *arg){
 
-	printf("function start %p\n", start_routine);
-
     pthread_mutex_lock(&cine_mutex);
 //	int result = orig_thread_create(thread, attr, start_routine, arg);
 	int result = orig_thread_create(thread, attr, start_routine, arg);
 	//Hopefully there is no switch before this executes
 	threadEventsBehaviour->beforeCreatingThread((long) *thread);
 	thread_count++; //increment here since creation may be delayed
-	cerr << "before " << *thread << "# " << thread_count << endl;
+	DEBUG_PRINT(("before %lu # %d\n", *thread, thread_count));
     pthread_mutex_unlock(&cine_mutex);
 
 	return result;
@@ -156,7 +155,7 @@ int cine_thread_create(pthread_t *thread, const pthread_attr_t *attr,
 	//Hopefully there is no switch before this executes
 	threadEventsBehaviour->beforeCreatingThread((long) *thread);
 	thread_count++; //increment here since creation may be delayed
-	cerr << "before " << *thread << "# " << thread_count << endl;
+	DEBUG_PRINT(("before %lu # %d\n", *thread, thread_count));
     pthread_mutex_unlock(&cine_mutex);
 
 	return result;
@@ -173,35 +172,35 @@ void cine_start_thread(){
 	threadEventsBehaviour->afterCreatingThread(); //lets hope that this does not block
     //append a number onto the end for easy reference
     sprintf(n + strlen(n) - 1 , " %lu", thread);
-	cerr << "child " << n << " #" << thread_count << endl;
+	DEBUG_PRINT(("child %s # %d\n", n, thread_count));
 	threadEventsBehaviour->onStart((long)thread, n);
     pthread_mutex_unlock(&cine_mutex);
 }
 
 void cine_timer_entry(int id){
-	cerr << "entry " << id << " " <<  pthread_self() << endl;
+	DEBUG_PRINT(("entry %d %lu\n", id, pthread_self()));
 	//recursive methods do not matter
 	methodEventsBehaviour->afterMethodEntry(id);
 }
 
 void cine_timer_exit(int id){
-	cerr << "exit " << id << " " <<  pthread_self() << endl;
+	DEBUG_PRINT(("exit %d %lu\n", id, pthread_self()));
 	methodEventsBehaviour->beforeMethodExit(id);
 }
 
 void cine_timer_invalidate_exit(int id){
-	cerr << "exit " << id << " " <<  pthread_self() << endl;
+	DEBUG_PRINT(("exit %d %lu\n", id, pthread_self()));
 	if(methodEventsBehaviour->beforeMethodExit(id) || true){
 		InvMsg_t *msg = new InvMsg();
 		msg->mid = id;
 		if (DYNINSTuserMessage(msg, id) != 0){
-			cerr << "message failed" << endl;
+			DEBUG_PRINT(("message failed\n"));
 		}
 	}
 }
 
 void cine_teardown(){
-	cerr << "ending all threads and getting results" << endl;
+	DEBUG_PRINT(("ending all threads and getting results\n"));
 	//TODO: make sure all threads exit
 	endSimulator();
 	close(inv_fifo);
@@ -215,7 +214,7 @@ void cine_exit_thread(){
 
     pthread_mutex_lock(&cine_mutex);
 	thread_count--;
-	cerr << "thread exited " << pthread_self() << " left: " << thread_count << endl;
+	DEBUG_PRINT(("thread_exit %lu # %d\n", pthread_self(), thread_count));
 	pthread_mutex_unlock(&cine_mutex);
 
 	if(pthread_self() == init_thread){
@@ -236,12 +235,12 @@ void cine_exit_thread(){
 }
 
 void cine_method_registration(char *name, int mid){
-	cerr << "registering " << mid << endl;
+	DEBUG_PRINT(("registering %s %d \n", name, mid));
 	eventLogger->registerMethod(name, mid);
 }
 
 void print_address(void *dest){
-	cerr << "destination " << dest << endl;
+	DEBUG_PRINT(("destination %p \n", dest));
 }
 
 //		char mid[5];

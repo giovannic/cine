@@ -15,6 +15,7 @@
 #include "Symbol.h"
 #include "Command.h"
 #include "PatchMgr.h"
+#include "debug.h"
 using namespace std;
 using namespace Dyninst;
 
@@ -78,7 +79,7 @@ bool Instrumenter::instrumentThreadEntry(BPatch_process*p, BPatch_thread *t){
 
 	p->oneTimeCode(call, &err);
 	if (err){
-		cerr << "one time code failing" << endl;
+		DEBUG_PRINT(("one time code failing \n"));
 	}
 	return false;
 }
@@ -197,12 +198,12 @@ bool Instrumenter::instrumentThreadEntry(BPatch_function *entryFunction,
 	//make sure that this is the last call that is made
 	if(entrySnippet == NULL ||
 			app->insertSnippet(exitCall, *exits, BPatch_lastSnippet) == NULL){
-		cerr << "entry instrumentation failed" << endl;
+		DEBUG_PRINT(("entry instrumentation failed \n"));
 	} else {
 		timers->push_back(entrySnippet);
 	}
 
-	cout << "instrumented " << entryFunction->getName() << endl;
+	DEBUG_PRINT(("instrumented %s\n", entryFunction->getName().c_str()));
 
 	return true;//this can fail
 }
@@ -214,7 +215,7 @@ bool Instrumenter::wrapFunction(BPatch_function *f, BPatch_function *newf, BPatc
 	SymtabAPI::Symbol *sym = findSymbol(symtab, oldf->getName());
 
 	if (sym == NULL){
-		cerr << "no replacement functions found" << endl;
+		DEBUG_PRINT(("no replacement function found \n"));
 		return false;
 	}
 
@@ -422,11 +423,11 @@ bool Instrumenter::insertThreadCalls(){
 	}
 
 	if(!threadMutex()){
-		cerr << "mutexes failed" << endl;
+		DEBUG_PRINT(("mutexes failed \n"));
 	}
 
 	if(!threadExit()){
-		cerr << "threads exit naturally" << endl;
+		DEBUG_PRINT(("no exit call \n"));
 	}
 
 	return true;
@@ -467,6 +468,7 @@ bool Instrumenter::timeFunctionCalls(BPatch_function *f, int methodId){
 
 	if(allExit || pExit){
 		cout << "early finish on " << f->getName() << endl;
+		DEBUG_PRINT(("early finish on %s\n", f->getName().c_str()));
 	}
 
 	BPatchSnippetHandle *s = app->insertSnippet(timerStartCall, callpts, BPatch_callBefore, BPatch_lastSnippet);
@@ -566,27 +568,22 @@ bool Instrumenter::timeFunction(BPatch_function *f, int methodId,
 		exits->push_back(pExit);
 	}
 	if(allExit || pExit){
-		cout << "early finish on " << f->getName() << endl;
+		DEBUG_PRINT(("early finish on %s\n", f->getName().c_str()));
 	}
 
 	void *beg;
 	void *end;
 	f->getAddressRange(beg, end);
-	cout << f->getName() << " ranges " << beg << " to " << end << " entry points: ";
+	DEBUG_PRINT(("%s ranges %p to %p\n", f->getName().c_str(), beg, end));
 	for(vector<BPatch_point *>::const_iterator it = entries->begin();
 			it != entries->end(); it ++){
 		BPatch_point *p = *it;
-		cout << p->getAddress() << " ";
 	}
 
-	cout << " exit points: ";
 	for(vector<BPatch_point *>::const_iterator it = exits->begin();
 			it != exits->end(); it ++){
 		BPatch_point *p = *it;
-		cout << p->getAddress() << " ";
 	}
-
-	cout << endl;
 
 	BPatch_funcCallExpr timerStartCall(*timerStart, args);
 	BPatch_funcCallExpr timerStopCall(*timerStop, args);
@@ -631,11 +628,11 @@ bool Instrumenter::initCalls(){
 
 		BPatch_funcCallExpr regCall(*reg, margs);
 		if(app->insertSnippet(regCall, *startPoint, BPatch_lastSnippet) == NULL){
-			cerr << "method cannot be registered" << n << endl;
+			DEBUG_PRINT(("method cannot be registered \n"));
 		}
 
 		if(!timeFunction(f, mid)){
-			cerr << " method cannot be timed" << endl;
+			DEBUG_PRINT(("method cannot be timed\n"));
 		}
 		mid++;
 	}

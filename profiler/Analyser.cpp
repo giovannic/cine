@@ -10,6 +10,7 @@
 #include "BPatch_function.h"
 #include "BPatch_point.h"
 #include "BPatch_image.h"
+#include "debug.h"
 #include <iostream>
 
 using namespace std;
@@ -41,7 +42,7 @@ bool Analyser::getUsefulFunctions(vector<BPatch_function *> &fs){
 			it != ms.end(); it++){
 		BPatch_module *m = *it;
 
-		if(!m->isSharedLib()){
+		if(!m->isSharedLib() && !m->isSystemLib()){
 			mfs = m->getProcedures();
 			fs.insert(fs.end(), mfs->begin(), mfs->end());
 		}
@@ -66,7 +67,6 @@ BPatch_function *Analyser::getStartThread(){
 			mi != ms->end(); mi++){
 		char n[50];
 		(*mi)->getName(n, 50);
-		cout << n << endl;
 	}
 	return NULL;
 }
@@ -77,7 +77,7 @@ BPatch_function *Analyser::getFunction(string s){
 	const char *sArg = s.c_str();
 	img->findFunction(sArg, fs);
 	if (fs.size() != 1){
-		cerr << "[warning] " << fs.size() << " x " << s << endl;
+		DEBUG_PRINT(("[warning] %d x %s\n", fs.size(), s.c_str()));
 		if (fs.size() == 0){
 			return NULL;
 		}
