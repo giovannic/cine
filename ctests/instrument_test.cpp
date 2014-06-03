@@ -55,12 +55,12 @@ TEST_CASE( "Pthreads", "[instruments]" ) {
 	//insert more here
 	SECTION("time methods"){
 		REQUIRE(inst.loadLibraries());
-		vector <BPatch_function *> fs;
-		a.getUsefulFunctions(fs);
+		vector <BPatch_function *> *fs;
+		fs = a.getUsefulFunctions();
 
 		int mid = 1;
-		for (vector <BPatch_function *>::iterator it = fs.begin();
-				it != fs.end(); it++){
+		for (vector <BPatch_function *>::iterator it = fs->begin();
+				it != fs->end(); it++){
 			BPatch_function *f = *it;
 			//cout << mid << "/" << fs.size() << endl;
 			inst.timeFunction(f, mid++);

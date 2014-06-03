@@ -123,10 +123,10 @@ bool Instrumenter::threadDestruction() {
 	BPatch_function *cineDestroy = analyser->getFunction("cine_exit_thread");
 	BPatch_function *cineDestroyAll = analyser->getFunction("cine_teardown");
 
-	vector<BPatch_function *>fs;
-	analyser->getUsefulFunctions(fs);
-	return (replaceCalls(fs, pexit, cineDestroy) &&
-			replaceCalls(fs, fExit, cineDestroyAll));
+	vector<BPatch_function *>*fs;
+	fs = analyser->getUsefulFunctions();
+	return (replaceCalls(*fs, pexit, cineDestroy) &&
+			replaceCalls(*fs, fExit, cineDestroyAll));
 }
 
 bool Instrumenter::mainThreadCreation(){
@@ -308,12 +308,12 @@ bool Instrumenter::instrumentSleep() {
 	BPatch_function *join = analyser->getFunction("pthread_join");
 	BPatch_function *cineJoin = analyser->getFunction("cine_join");
 
-	vector<BPatch_function *> fs;
-	analyser->getUsefulFunctions(fs);
+	vector<BPatch_function *> *fs;
+	fs = analyser->getUsefulFunctions();
 
-	return (replaceCalls(fs, sleep, cineSleep) &&
-			replaceCalls(fs, yield, cineYield) &&
-			replaceCalls(fs, join, cineJoin)
+	return (replaceCalls(*fs, sleep, cineSleep) &&
+			replaceCalls(*fs, yield, cineYield) &&
+			replaceCalls(*fs, join, cineJoin)
 			);
 
 }
@@ -325,8 +325,8 @@ bool Instrumenter::threadMutex(){
 	//pthread_cond_wait
 	//pthread_cond_timed_wait
 
-	vector<BPatch_function *> fs;
-	analyser->getUsefulFunctions(fs);
+	vector<BPatch_function *> *fs;
+	fs = analyser->getUsefulFunctions();
 
 	//this will regex search and find the mangled name
 	BPatch_function *mutexLock = analyser->getFunction("pthread_mutex_lock");
@@ -347,12 +347,12 @@ bool Instrumenter::threadMutex(){
 	vector<BPatch_function *>condBroadcasts = analyser->getAllFunctions("pthread_cond_broadcast");
 	BPatch_function *cineCondBroadcast = analyser->getFunction("cine_cond_broadcast");
 
-	return (replaceCalls(fs, mutexLock, cineMutexLock) &&
-			replaceCalls(fs, mutexUnlock, cineMutexUnlock) &&
-			replaceCalls(fs, condWaits, cineCondWait) &&
-			replaceCalls(fs, condTimedwaits, cineCondTimedwait) &&
-			replaceCalls(fs, condSignals, cineCondSignal) &&
-			replaceCalls(fs, condBroadcasts, cineCondBroadcast)
+	return (replaceCalls(*fs, mutexLock, cineMutexLock) &&
+			replaceCalls(*fs, mutexUnlock, cineMutexUnlock) &&
+			replaceCalls(*fs, condWaits, cineCondWait) &&
+			replaceCalls(*fs, condTimedwaits, cineCondTimedwait) &&
+			replaceCalls(*fs, condSignals, cineCondSignal) &&
+			replaceCalls(*fs, condBroadcasts, cineCondBroadcast)
 			);
 
 	//attempt to wrap
@@ -436,11 +436,11 @@ bool Instrumenter::insertThreadCalls(){
 
 bool Instrumenter::timeFunctionCalls(BPatch_function *f, int methodId){
 
-	vector<BPatch_function *>useful;
+	vector<BPatch_function *>*useful;
 	vector<BPatch_point *>callpts;
-	analyser->getUsefulFunctions(useful);
-	for(vector<BPatch_function *>::const_iterator it = useful.begin();
-			it != useful.end(); ++it){
+	useful = analyser->getUsefulFunctions();
+	for(vector<BPatch_function *>::const_iterator it = useful->begin();
+			it != useful->end(); ++it){
 		BPatch_function *usefulF = *it;
 		analyser->getCalls(usefulF, f, callpts);
 	}
@@ -613,11 +613,11 @@ bool Instrumenter::initCalls(){
 
 	//register methods
 	BPatch_function *reg = analyser->getFunction("cine_method_registration");
-	vector<BPatch_function *> ms;
-	analyser->getUsefulFunctions(ms);
+	vector<BPatch_function *> *ms;
+	ms = analyser->getUsefulFunctions();
 	int mid = 0;
-	for(vector<BPatch_function *>::const_iterator mi = ms.begin();
-			mi != ms.end(); mi++){
+	for(vector<BPatch_function *>::const_iterator mi = ms->begin();
+			mi != ms->end(); mi++){
 		BPatch_function *f = *mi;
 		vector<BPatch_snippet *> margs;
 		const char *n = f->getName().c_str();

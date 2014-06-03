@@ -18,7 +18,7 @@ dest = ARGUMENTS.get('dest', '')
 
 dyninstLibs = ['dyninstAPI', 'common', 'symtabAPI', 'instructionAPI', 'parseAPI', 'patchAPI', 'stackwalk', 'pcontrol', 'dynElf', 'dynDwarf', 'symLite']
 
-test_env = Environment(LIBPATH = [dwarf, dyninstlib, vexlib, vexagentlib], CCFLAGS='-g')
+test_env = Environment(LIBPATH = [dwarf, dyninstlib, vexlib, vexagentlib], CCFLAGS='-g -std=c++11')
 
 #this really needs to be separated
 test_env.Append(LIBS= dyninstLibs +  ['vex', 'JVMTIAgent', 'papi', 'pthread'])

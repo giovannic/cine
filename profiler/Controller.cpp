@@ -72,17 +72,15 @@ bool Controller::beginSimulator(){
 }
 
 bool Controller::registerMethods(){
-	vector<BPatch_function *>fs;
-	analyser->getUsefulFunctions(fs);
+	vector<BPatch_function *> *fs;
+	fs = analyser->getUsefulFunctions();
 
 	BPatch_function *reg = analyser->getFunction("cine_method_registration");
 
-	vector<BPatch_function *> ms;
-	analyser->getUsefulFunctions(ms);
 	int mid = 0;
 	vector<BPatch_snippet *> registrations;
-	for(vector<BPatch_function *>::const_iterator mi = ms.begin();
-			mi != ms.end(); mi++){
+	for(vector<BPatch_function *>::const_iterator mi = fs->begin();
+			mi != fs->end(); mi++){
 		bool err;
 		BPatch_function *f = *mi;
 		vector<BPatch_snippet *> margs;

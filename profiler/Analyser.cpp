@@ -14,7 +14,14 @@
 #include <iostream>
 
 using namespace std;
+Analyser::Analyser(BPatch_image *img) {
+	this->img = img;
+	searchCache = new SearchCache_t();
+	functionSet = NULL;
+}
 
+Analyser::~Analyser() {
+}
 bool Analyser::getUsefulModules(vector<BPatch_module *> &ms){
 	vector<BPatch_module *>allms;
 
@@ -32,7 +39,12 @@ bool Analyser::getUsefulModules(vector<BPatch_module *> &ms){
 	return true;
 }
 
-bool Analyser::getUsefulFunctions(vector<BPatch_function *> &fs){
+vector<BPatch_function *> *Analyser::getUsefulFunctions(){
+	if (functionSet != NULL){
+		return functionSet;
+	}
+
+	functionSet = new vector<BPatch_function *>();
 	vector<BPatch_module *>ms;
 	vector<BPatch_function *> *mfs;
 
@@ -44,21 +56,19 @@ bool Analyser::getUsefulFunctions(vector<BPatch_function *> &fs){
 
 		if(!m->isSharedLib() && !m->isSystemLib()){
 			mfs = m->getProcedures();
-			fs.insert(fs.end(), mfs->begin(), mfs->end());
+			functionSet->insert(functionSet->end(), mfs->begin(), mfs->end());
 		}
 	}
 
-	return true;
+	return functionSet;
 }
 
 
 vector<BPatch_function *>Analyser::getAllFunctions(string s){
-
 	vector<BPatch_function *> fs;
 	const char *sArg = s.c_str();
 	img->findFunction(sArg, fs);
 	return fs;
-
 }
 
 BPatch_function *Analyser::getStartThread(){
@@ -73,6 +83,11 @@ BPatch_function *Analyser::getStartThread(){
 
 BPatch_function *Analyser::getFunction(string s){
 
+	SearchCache_t::iterator f = searchCache->find(s);
+	if (f != searchCache->end()){
+		return f->second;
+	}
+
 	vector<BPatch_function *> fs;
 	const char *sArg = s.c_str();
 	img->findFunction(sArg, fs);
@@ -82,15 +97,8 @@ BPatch_function *Analyser::getFunction(string s){
 			return NULL;
 		}
 	}
+	(*searchCache)[s] = fs.front();
 	return fs.front();
-
-}
-
-Analyser::Analyser(BPatch_image *img) {
-	this->img = img;
-}
-
-Analyser::~Analyser() {
 }
 
 BPatch_function* Analyser::findMethod(Dyninst::Address a) {
