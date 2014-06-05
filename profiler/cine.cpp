@@ -10,6 +10,7 @@
 #include "cine.h"
 #include <pthread.h>
 #include <iostream>
+#include <set>
 #include "VTF.h"
 #include "cine.h"
 #include "debug.h"
@@ -22,14 +23,19 @@ using namespace std;
 using namespace VEX;
 
 long thread_count = 0;
+pthread_mutex_t count_lock;
+
 long end_count = 0;
 bool initialised = false;
+
+pthread_mutex_t registry_lock;
+pthread_cond_t newThread;
+set<pthread_t> *registeredThreads;
 
 const char *pipefile = "/tmp/cineinv";
 int inv_fifo;
 
 pthread_t init_thread;
-pthread_mutex_t cine_mutex;
 
 //--Mutex methods
 //put thread calls into a different library so
@@ -77,7 +83,7 @@ int cine_cond_signal(pthread_cond_t *cond){
 
 int cine_sleep(unsigned int t){
 	DEBUG_PRINT(("sleep %d \n", t));
-	threadEventsBehaviour->onSleep(t, 0);
+	return threadEventsBehaviour->onSleep(t*1000, 0);
 //	return sleep(t);
 }
 
@@ -87,9 +93,20 @@ int cine_yield(){
 //	return pthread_yield();
 }
 
+time_t cine_time(time_t *t){
+	DEBUG_PRINT(("time \n"));
+	time_t vtime = threadEventsBehaviour->getTime();
+	if (t != NULL){
+		*t = vtime;
+	}
+	return vtime;
+}
+
 int cine_join(pthread_t thread, void **value_ptr){
 	DEBUG_PRINT(("join \n"));
 	threadEventsBehaviour->onJoin((long)thread);
+	pthread_join(thread, value_ptr);
+	DEBUG_PRINT(("joined \n"));
 //	return pthread_join(thread, value_ptr);
 }
 
@@ -97,10 +114,10 @@ int cine_join(pthread_t thread, void **value_ptr){
 void cine_initial_thread(){
 	init_thread = pthread_self();
 	threadEventsBehaviour->onThreadMainStart((long)init_thread);
-    pthread_mutex_lock(&cine_mutex);
+    pthread_mutex_lock(&count_lock);
 	thread_count++;
 	DEBUG_PRINT(("initial %lu # %d\n", init_thread, thread_count));
-    pthread_mutex_unlock(&cine_mutex);
+    pthread_mutex_unlock(&count_lock);
 }
 
 void cine_new_thread(){
@@ -108,10 +125,10 @@ void cine_new_thread(){
 	char n[50];
 	pthread_getname_np(t, n, sizeof(n));
 	threadEventsBehaviour->onStart((long)t, n);
-    pthread_mutex_lock(&cine_mutex);
+    pthread_mutex_lock(&count_lock);
 	thread_count++;
 	DEBUG_PRINT(("new %lu # %d\n", t, thread_count));
-    pthread_mutex_unlock(&cine_mutex);
+    pthread_mutex_unlock(&count_lock);
 }
 
 //initialisation
@@ -119,7 +136,10 @@ void cine_init(){
 	if (initialised){
 		cine_new_thread();
 	} else {
-		pthread_mutex_init(&cine_mutex, NULL);
+		pthread_mutex_init(&count_lock, NULL);
+		pthread_mutex_init(&registry_lock, NULL);
+		pthread_cond_init(&newThread, NULL);
+		registeredThreads = new set<pthread_t>();
 		initializeSimulator(NULL);
 		cine_initial_thread();
 		initialised = true;
@@ -134,32 +154,46 @@ int orig_thread_create(pthread_t *thread, const pthread_attr_t *attr,
 int cine_wrap_thread_create(pthread_t *thread, const pthread_attr_t *attr,
 	                          void *(*start_routine) (void *), void *arg){
 
-    pthread_mutex_lock(&cine_mutex);
+
+    pthread_mutex_lock(&registry_lock);
 //	int result = orig_thread_create(thread, attr, start_routine, arg);
 	int result = orig_thread_create(thread, attr, start_routine, arg);
 	//Hopefully there is no switch before this executes
 	threadEventsBehaviour->beforeCreatingThread((long) *thread);
+	registeredThreads->insert(*thread);
+    pthread_mutex_unlock(&registry_lock);
+
+    pthread_cond_broadcast(&newThread);
+
+    pthread_mutex_lock(&count_lock);
 	thread_count++; //increment here since creation may be delayed
 	DEBUG_PRINT(("before %lu # %d\n", *thread, thread_count));
-    pthread_mutex_unlock(&cine_mutex);
+    pthread_mutex_unlock(&count_lock);
 
 	return result;
 }
 
-int cine_thread_create(pthread_t *thread, const pthread_attr_t *attr,
-	                          void *(*start_routine) (void *), void *arg){
+//int cine_thread_create(pthread_t *thread, const pthread_attr_t *attr,
+//	                          void *(*start_routine) (void *), void *arg){
+//	pthread_mutex_lock(&count_lock);
+//	thread_count++; //increment here since creation may be delayed
+//	DEBUG_PRINT(("before %lu # %d\n", *thread, thread_count));
+//    pthread_mutex_unlock(&count_lock);
+//
+//    pthread_mutex_lock(&creation_lock);
+////	int result = orig_thread_create(thread, attr, start_routine, arg);
+//	int result = pthread_create(thread, attr, start_routine, arg);
+//	//Hopefully there is no switch before this executes
+//	threadEventsBehaviour->beforeCreatingThread((long) *thread);
+//    pthread_mutex_unlock(&creation_lock);
+//
+//	return result;
+//}
 
-    pthread_mutex_lock(&cine_mutex);
-//	int result = orig_thread_create(thread, attr, start_routine, arg);
-	int result = pthread_create(thread, attr, start_routine, arg);
-	//Hopefully there is no switch before this executes
-	threadEventsBehaviour->beforeCreatingThread((long) *thread);
-	thread_count++; //increment here since creation may be delayed
-	DEBUG_PRINT(("before %lu # %d\n", *thread, thread_count));
-    pthread_mutex_unlock(&cine_mutex);
-
-	return result;
-}
+//int cine_thread_create_end(pthread_t *thread, const pthread_attr_t *attr,
+//	                          void *(*start_routine) (void *), void *arg){
+//
+//}
 
 
 
@@ -168,13 +202,20 @@ void cine_start_thread(){
 	char n[50];
 	pthread_getname_np(thread, n, sizeof(n));
 
-    pthread_mutex_lock(&cine_mutex);
-	threadEventsBehaviour->afterCreatingThread(); //lets hope that this does not block
-    //append a number onto the end for easy reference
-    sprintf(n + strlen(n) - 1 , " %lu", thread);
+	pthread_mutex_lock(&count_lock);
+    sprintf(n + strlen(n), " %lu", thread);
 	DEBUG_PRINT(("child %s # %d\n", n, thread_count));
+	pthread_mutex_unlock(&count_lock);
+
+    pthread_mutex_lock(&registry_lock);
+    while(registeredThreads->find(thread) == registeredThreads->end()){
+    	DEBUG_PRINT(("waiting to be registered\n"));
+    	pthread_cond_wait(&newThread, &registry_lock);
+
+    }
+	threadEventsBehaviour->afterCreatingThread(); //lets hope that this does not block
 	threadEventsBehaviour->onStart((long)thread, n);
-    pthread_mutex_unlock(&cine_mutex);
+    pthread_mutex_unlock(&registry_lock);
 }
 
 void cine_timer_entry(int id){
@@ -212,10 +253,14 @@ void cine_teardown(){
 void cine_exit_thread(){
 	threadEventsBehaviour->onEnd();
 
-    pthread_mutex_lock(&cine_mutex);
+    pthread_mutex_lock(&count_lock);
 	thread_count--;
 	DEBUG_PRINT(("thread_exit %lu # %d\n", pthread_self(), thread_count));
-	pthread_mutex_unlock(&cine_mutex);
+    pthread_mutex_unlock(&count_lock);
+
+    pthread_mutex_lock(&count_lock);
+    registeredThreads->erase(pthread_self());
+    pthread_mutex_unlock(&count_lock);
 
 	if(pthread_self() == init_thread){
 		cine_teardown();

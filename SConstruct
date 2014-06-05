@@ -11,6 +11,7 @@ vexlib = vexinc
 dwarf = '/home/giovanni/oss/deps/libdwarf'
 
 debug = ARGUMENTS.get('debug', 0)
+prof = ARGUMENTS.get('prof', 0)
 dest = ARGUMENTS.get('dest', '')
 
 
@@ -18,7 +19,10 @@ dest = ARGUMENTS.get('dest', '')
 
 dyninstLibs = ['dyninstAPI', 'common', 'symtabAPI', 'instructionAPI', 'parseAPI', 'patchAPI', 'stackwalk', 'pcontrol', 'dynElf', 'dynDwarf', 'symLite']
 
-test_env = Environment(LIBPATH = [dwarf, dyninstlib, vexlib, vexagentlib], CCFLAGS='-g -std=c++11')
+cflags = '-g -std=c++11'
+if prof:
+  cflags = cflags + ' -pg'
+test_env = Environment(LIBPATH = [dwarf, dyninstlib, vexlib, vexagentlib], CCFLAGS= cflags)
 
 #this really needs to be separated
 test_env.Append(LIBS= dyninstLibs +  ['vex', 'JVMTIAgent', 'papi', 'pthread'])
@@ -32,11 +36,11 @@ test_env.Append(CPPDEFINES={'BIN_PATH': bins})
 
 supporting_sources = ['launcher/DynamicLauncher.cpp', 'launcher/StaticLauncher.cpp', 'launcher/Launcher.cpp', 'profiler/Instrumenter.cpp', 'profiler/Controller.cpp', 'profiler/Analyser.cpp', 'profiler/AsyncListener.cpp', 'profiler/Listener.cpp']
 launcher_test_sources = ['ctests/launcher_test.cpp'] + supporting_sources
-test_env.Program(dest + 'bin/tests/launcher_test', launcher_test_sources)
+#test_env.Program(dest + 'bin/tests/launcher_test', launcher_test_sources)
 instrument_test_sources = ['ctests/instrument_test.cpp'] + supporting_sources
-test_env.Program(dest + 'bin/tests/instrument_test', instrument_test_sources)
+#test_env.Program(dest + 'bin/tests/instrument_test', instrument_test_sources)
 result_test_sources = ['ctests/result_test.cpp'] + supporting_sources
-test_env.Program(dest + 'bin/tests/result_test', result_test_sources)
+#test_env.Program(dest + 'bin/tests/result_test', result_test_sources)
 
 main_sources = ['launcher/main.cpp'] + supporting_sources
 test_env.Program(dest + 'bin/cine', main_sources)

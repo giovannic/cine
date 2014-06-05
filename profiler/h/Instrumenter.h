@@ -36,6 +36,7 @@ public:
     bool finalFunction(string f);
     bool instrumentContention();
     bool threadCreation();
+    bool time();
     bool threadDestruction();
     bool debugStart();
 private:

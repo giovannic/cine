@@ -23,11 +23,6 @@ int cine_cond_wait(pthread_cond_t *cond,pthread_mutex_t *mutex);
 int cine_mutex_unlock(pthread_mutex_t *mutex);
 int cine_mutex_lock(pthread_mutex_t *mutex);
 
-extern pthread_mutex_t cine_mutex;
-extern pthread_t init_thread;
-extern bool initialised;
-extern long end_count;
-extern long thread_count;
 /*
 extern using namespace VEX;
 extern using namespace std;

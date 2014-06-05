@@ -64,6 +64,8 @@ void DynamicLauncher::listenResults(){
 }
 
 bool DynamicLauncher::launch(){
+	cout << "sleeping to avoid race condition in dyninst " << endl;
+	sleep(5);
 	app->continueExecution();
 	while (!app->isTerminated())
 		bpatch->waitForStatusChange();
@@ -97,16 +99,19 @@ bool DynamicLauncher::setup(){
 		cerr << "thread creation failed" << endl;
 		return false;
 	}
-//
 	if(!inst->threadDestruction()){
 		cerr << "thread destruction failed" << endl;
 		return false;
 	}
-//
 	if(!inst->instrumentContention()){
 		cerr << "contention failed" << endl;
 		return false;
 	}
+
+//	if(!inst->time()){
+//		cerr << "time failed" << endl;
+//		return false;
+//	}
 
 //	if(!listener->listen()){
 //		cerr << "invalidation failed" << endl;
@@ -114,8 +119,8 @@ bool DynamicLauncher::setup(){
 //	}
 
 	//this causes a segfault as dyninst searches for lib=""
-//	ctrl->listenResults();
-//	inst->finalFunction("main");
+	ctrl->listenResults();
+	inst->finalFunction("main");
 
 	return true;
 }

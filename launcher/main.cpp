@@ -23,7 +23,6 @@ int main(int argc, char* argv[]) {
 	}
 	DynamicLauncher l(input, &args);
 
-	l.setup();
 	l.launch();
 
 	exit(0);

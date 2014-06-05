@@ -753,3 +753,14 @@ bool Instrumenter::loadPthreads() {
 	}
 	return true;
 }
+
+bool Instrumenter::time() {
+	vector<BPatch_function *> *fs;
+	fs = analyser->getUsefulFunctions();
+	BPatch_function *time = analyser->getFunction("time");
+	BPatch_function *cineTime = analyser->getFunction("cine_time");
+	if(time == NULL){
+		return false;
+	}
+	return replaceCalls(*fs, time, cineTime);
+}

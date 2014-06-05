@@ -135,6 +135,7 @@ BPatch_point *Analyser::hasCall(BPatch_function *f, BPatch_function *calleeF){
 			return NULL;
 		}
 		BPatch_function *callee = cp->getCalledFunction();
+//		DEBUG_PRINT(("%s calls %s\n", f->getName().c_str(), callee ? callee->getName().c_str() : string("unknown").c_str()));
 		if(callee != NULL && (callee->getDemangledName() == calleeF->getDemangledName())){
 			return cp;
 		}
