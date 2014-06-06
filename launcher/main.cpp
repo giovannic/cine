@@ -21,7 +21,8 @@ int main(int argc, char* argv[]) {
 			args.push_back(arg);
 		}
 	}
-	DynamicLauncher l(input, &args);
+//	DynamicLauncher l(input, &args);
+	StaticLauncher l(input);
 
 	l.launch();
 

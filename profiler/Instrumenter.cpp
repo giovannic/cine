@@ -281,6 +281,9 @@ bool Instrumenter::replaceCalls(vector<BPatch_function *> &fs,
 bool Instrumenter::replaceCalls(vector<BPatch_function *> &fs,
 		BPatch_function *oldF, BPatch_function *newF){
 	vector<BPatch_point *> callPoints;
+	if(oldF == NULL){
+		return true;
+	}
 
 	for(vector<BPatch_function *>::const_iterator it = fs.begin();
 			it != fs.end(); it++){
@@ -637,13 +640,14 @@ bool Instrumenter::initCalls(){
 		mid++;
 	}
 
-	BPatch_function * threadInit = analyser->getFunction("cine_initial_thread");
-	vector<BPatch_snippet *> targs;
-	BPatch_funcCallExpr threadInitCall(*threadInit, targs);
-
-	if(app->insertSnippet(threadInitCall, *startPoint, BPatch_lastSnippet) == NULL){
-		return false;
-	}
+	//cine does this now
+//	BPatch_function * threadInit = analyser->getFunction("cine_initial_thread");
+//	vector<BPatch_snippet *> targs;
+//	BPatch_funcCallExpr threadInitCall(*threadInit, targs);
+//
+//	if(app->insertSnippet(threadInitCall, *startPoint, BPatch_lastSnippet) == NULL){
+//		return false;
+//	}
 
 	return true;
 

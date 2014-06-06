@@ -93,8 +93,6 @@ bool DynamicLauncher::setup(){
 		return false;
 	}
 
-//	inst->debugStart();
-
 	if(!inst->threadCreation()){
 		cerr << "thread creation failed" << endl;
 		return false;

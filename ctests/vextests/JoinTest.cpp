@@ -31,7 +31,7 @@ using namespace std;
   */
 
   void *TestTimerThread(void *t){
-    sleep(7);
+    sleep(3);
     testTimeOut = true;
   }
 

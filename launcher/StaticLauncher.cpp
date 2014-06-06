@@ -59,16 +59,28 @@ bool StaticLauncher::setup(){
 		return false;
 	}
 
+	if(!inst->threadCreation()){
+		cerr << "thread creation failed" << endl;
+		return false;
+	}
+	if(!inst->threadDestruction()){
+		cerr << "thread destruction failed" << endl;
+		return false;
+	}
+	if(!inst->instrumentContention()){
+		cerr << "contention failed" << endl;
+		return false;
+	}
+
 //	if(!inst->insertThreadCalls()){
 //		cerr << "thread calls failed" << endl;
 //		return false;
 //	}
 
 	if(!inst->instrumentExit()){
-		cout << "no explicit exit point falling back on thread counting" << endl;
+		inst->finalFunction("main");
 		//if QoS method specified make the endpoint at the exit
 		//may need better logic here
-		inst->finalFunction("main");
 	}
 
 	return true;

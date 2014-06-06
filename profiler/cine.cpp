@@ -154,10 +154,12 @@ int orig_thread_create(pthread_t *thread, const pthread_attr_t *attr,
 int cine_wrap_thread_create(pthread_t *thread, const pthread_attr_t *attr,
 	                          void *(*start_routine) (void *), void *arg){
 
-
     pthread_mutex_lock(&registry_lock);
 //	int result = orig_thread_create(thread, attr, start_routine, arg);
 	int result = orig_thread_create(thread, attr, start_routine, arg);
+	if (result){
+		DEBUG_PRINT(("pthread create failed\n"));
+	}
 	//Hopefully there is no switch before this executes
 	threadEventsBehaviour->beforeCreatingThread((long) *thread);
 	registeredThreads->insert(*thread);
@@ -214,8 +216,8 @@ void cine_start_thread(){
 
     }
 	threadEventsBehaviour->afterCreatingThread(); //lets hope that this does not block
-	threadEventsBehaviour->onStart((long)thread, n);
     pthread_mutex_unlock(&registry_lock);
+	threadEventsBehaviour->onStart((long)thread, n);
 }
 
 void cine_timer_entry(int id){
