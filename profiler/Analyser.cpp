@@ -10,6 +10,8 @@
 #include "BPatch_function.h"
 #include "BPatch_point.h"
 #include "BPatch_image.h"
+#include "BPatch_flowGraph.h"
+#include "BPatch_basicBlock.h"
 #include "debug.h"
 #include <iostream>
 
@@ -109,17 +111,25 @@ BPatch_function* Analyser::findMethod(Dyninst::Address a) {
 void Analyser::getCalls(BPatch_function *f, BPatch_function *newF, vector<BPatch_point *> &pts){
 	vector<BPatch_point *>calls;
 	f->getCallPoints(calls);
-	bool has = false;
 
-//	cout << "calls found: " << calls.size() << endl;
 	for(vector<BPatch_point *>::const_iterator c = calls.begin();
 			c != calls.end(); c++){
 		BPatch_point *cp = *c;
 		BPatch_function *callee = cp->getCalledFunction();
-		if(callee != NULL && (callee->getDemangledName() == newF->getDemangledName())){
+		if(callee != NULL && callMatches(callee, newF)){
 			pts.push_back(cp);
 		}
+
 	}
+}
+
+bool Analyser::callMatches(BPatch_function *a, BPatch_function *b){
+	return a == b;
+//	vector<BPatch_point *> aEntries;
+//	vector<BPatch_point *> bEntries;
+//	a->getEntryPoints(aEntries);
+//	b->getEntryPoints(bEntries);
+//	return aEntries.front()->getAddress() == bEntries.front()->getAddress();
 }
 
 //TODO:fix this for static analysis

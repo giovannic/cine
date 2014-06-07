@@ -275,7 +275,7 @@ bool Instrumenter::threadStart(){
 	for (vector<BPatch_point *>::const_iterator pi = possible.begin();
 			pi != possible.end(); pi++){
 		BPatch_point *callSite = *pi;
-		DEBUG_PRINT(("start calls: %s\n", (callSite->getCalledFunction() ? callSite->getCalledFunction()->getName().c_str() : string("unknown").c_str())));
+//		DEBUG_PRINT(("start calls: %s\n", (callSite->getCalledFunction() ? callSite->getCalledFunction()->getName().c_str() : string("unknown").c_str())));
 		if(callSite->isDynamic()){
 			//this is as good as guess as any
 
@@ -617,20 +617,7 @@ bool Instrumenter::timeFunction(BPatch_function *f, int methodId,
 
 	//if you pthread_exit before the end
 
-//	BPatch_flowGraph *graph = f->getCFG();
-//	set<BPatch_basicBlock *>blocks;
-//	graph->getAllBasicBlocks(blocks);
-//	for(set<BPatch_basicBlock *>::const_iterator bi = blocks.begin();
-//			bi != blocks.end(); bi++){
-//		BPatch_basicBlock *b = *bi;
-//		vector<BPatch_edge*> out;
-//		b->getIncomingEdges(out);
-//		for(vector<BPatch_edge*>::const_iterator o = out.begin();
-//				o != out.end(); o++){
-//			BPatch_edge *e = *o;
-//			cout << e->getTarget()->getFlowGraph()->getFunction()->getName() << endl;
-//		}
-//	}
+
 
 	BPatch_point *allExit;
 	if(fExit && (allExit = analyser->hasCall(f, fExit)) != NULL){

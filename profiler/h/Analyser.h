@@ -30,6 +30,7 @@ public:
     BPatch_point *hasCall(BPatch_function *f, BPatch_function *calleeF);
     void getCalls(BPatch_function *f, BPatch_function *newF, vector<BPatch_point *> &pts);
 private:
+    bool callMatches(BPatch_function *a, BPatch_function *b);
 	BPatch_image *img;
 	SearchCache_t *searchCache;
 	vector<BPatch_function*>*functionSet;

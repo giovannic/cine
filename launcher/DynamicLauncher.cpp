@@ -7,8 +7,10 @@
 
 #include "DynamicLauncher.h"
 #include "AsyncListener.h"
+#include "debug.h"
 
 DynamicLauncher::DynamicLauncher():Launcher() {
+	bpatch->setDelayedParsing(false);
 }
 
 DynamicLauncher::~DynamicLauncher() {
@@ -74,6 +76,7 @@ bool DynamicLauncher::setup(){
 //	inst->loadLibraries();
 //	inst->timeFunction(analyser->getFunction("watch_count"), 0);
 //	inst->timeFunction(analyser->getFunction("inc_count"), 0);
+	app->beginInsertionSet();
 
 	if(!inst->loadLibraries()){
 		cerr << "libraries did not load" << endl;
@@ -120,6 +123,10 @@ bool DynamicLauncher::setup(){
 	//this causes a segfault as dyninst searches for lib=""
 	ctrl->listenResults();
 	inst->finalFunction("main");
+
+	bool mod;
+	app->finalizeInsertionSet(true, &mod);
+	DEBUG_PRINT(("modified %d\n", mod));
 
 	return true;
 }

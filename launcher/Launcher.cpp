@@ -23,6 +23,7 @@ using namespace Dyninst;
 
 Launcher::Launcher(){
 	bpatch = new BPatch();
+	bpatch->setTrampRecursive(true);
 }
 
 Launcher::~Launcher(){

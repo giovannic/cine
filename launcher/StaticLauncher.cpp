@@ -16,12 +16,13 @@
 
 //Dyninst
 #include "BPatch.h"
+#include "debug.h"
 
 using namespace std;
 using namespace Dyninst;
 
 StaticLauncher::StaticLauncher():Launcher() {
-
+	bpatch->setInstrStackFrames(true); //TODO: remove when understood
 }
 
 StaticLauncher::~StaticLauncher() {
@@ -34,7 +35,7 @@ bool StaticLauncher::launch(){
 BPatch_binaryEdit *StaticLauncher::openBinary(){
 	char path[input->size()];
 	strcpy(path, input->c_str());
-	return bpatch->openBinary(path);
+	return bpatch->openBinary(path, true);
 }
 
 bool StaticLauncher::setup(){
@@ -44,13 +45,9 @@ bool StaticLauncher::setup(){
 
 //	inst->loadLibraries();
 //	inst->timeFunction(analyser->getFunction("inc_count"), 0);
+	bin->beginInsertionSet();
 
 	if(!inst->loadLibraries()){
-		cerr << "libraries did not load" << endl;
-		return false;
-	}
-
-	if(!inst->loadPthreads()){
 		cerr << "libraries did not load" << endl;
 		return false;
 	}
@@ -83,6 +80,10 @@ bool StaticLauncher::setup(){
 		//if QoS method specified make the endpoint at the exit
 		//may need better logic here
 	}
+
+	bool mod;
+	bin->finalizeInsertionSet(true, &mod);
+	DEBUG_PRINT(("modified %d\n", mod));
 
 	return true;
 }
