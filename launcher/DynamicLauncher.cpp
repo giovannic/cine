@@ -90,14 +90,15 @@ bool DynamicLauncher::setup(){
 		return false;
 	}
 
-//	if(!inst->threadCreation()){
-//		cerr << "thread creation failed" << endl;
-//		return false;
-//	}
-	if(!inst->threadCreate()){
+	if(!inst->threadCreation()){
 		cerr << "thread creation failed" << endl;
 		return false;
 	}
+
+//	if(!inst->threadCreate()){
+//		cerr << "thread creation failed" << endl;
+//		return false;
+//	}
 
 //	ctrl->listenThreads();
 
@@ -106,15 +107,10 @@ bool DynamicLauncher::setup(){
 		return false;
 	}
 
-//	if(!inst->instrumentContention()){
-//		cerr << "contention failed" << endl;
-//		return false;
-//	}
-
-//	if(!inst->time()){
-//		cerr << "time failed" << endl;
-//		return false;
-//	}
+	if(!inst->instrumentContention()){
+		cerr << "contention failed" << endl;
+		return false;
+	}
 
 //	if(!listener->listen()){
 //		cerr << "invalidation failed" << endl;

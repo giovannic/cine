@@ -271,6 +271,12 @@ void cine_start_thread(){
 }
 
 void cine_timer_entry(int id){
+	DEBUG_PRINT(("entry %d %lu\n", id, pthread_self()));
+	//recursive methods do not matter
+	methodEventsBehaviour->afterMethodEntry(id);
+}
+
+void cine_timer_entry_thread_check(int id){
 	pthread_t me = pthread_self();
     pthread_mutex_lock(&seen_lock);
     if(seenThreads->find(me) == seenThreads->end()){//not found
