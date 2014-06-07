@@ -311,8 +311,6 @@ void cine_teardown(){
 	exit(0);
 }
 
-
-
 void cine_exit_thread(){
 
     pthread_mutex_lock(&count_lock);
