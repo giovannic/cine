@@ -83,6 +83,47 @@ bool Instrumenter::instrumentThreadEntry(BPatch_process*p, BPatch_thread *t){
 	}
 	return false;
 }
+bool Instrumenter::threadLocklessCreate(){
+	BPatch_function *pcreate = analyser->getFunction("pthread_create");
+	BPatch_function *cineCreate = analyser->getFunction("cine_lockless_thread_create");
+
+	vector<BPatch_function *>*fs = analyser->getUsefulFunctions();
+	return replaceCalls(*fs, pcreate, cineCreate);
+}
+
+bool Instrumenter::threadCreate(){
+//
+////	BPatch_function *beforeCreate = analyser->getFunction("cine_before_create");
+////	BPatch_paramExpr thread(0);
+////	vector<BPatch_snippet *> args;
+////	args.push_back(&thread);
+////	BPatch_funcCallExpr beforeCall(*beforeCreate, args);
+////
+////	vector<BPatch_point*> *entries = create->findPoint(BPatch_exit);
+////	return(app->insertSnippet(beforeCall, *entries) != NULL);
+//
+
+	//wrapping version
+//	BPatch_function *create = analyser->getFunction("pthread_create");
+//	BPatch_function *cineCreate = analyser->getFunction("cine_wrap_thread_create");
+//	BPatch_function *replaceCreate = analyser->getFunction("orig_thread_create");
+//	return (wrapFunction(create, cineCreate, replaceCreate) &&
+//			threadStart());
+
+//	BPatch_function *cineCreate = analyser->getFunction("cine_notify_before_create");
+//	vector<BPatch_snippet *>args;
+//	BPatch_funcCallExpr createCall(cineCreate, args);
+//	vector<BPatch_point *>pts;
+//	pcreate->getExitPoints(pts);
+
+	//relocating version
+	BPatch_function *pcreate = analyser->getFunction("pthread_create");
+	BPatch_function *cineCreate = analyser->getFunction("cine_thread_create");
+
+	vector<BPatch_function *>*fs = analyser->getUsefulFunctions();
+	return replaceCalls(*fs, pcreate, cineCreate);
+//	return threadStart();
+}
 
 bool Instrumenter::threadCreation(){
 //
@@ -96,11 +137,12 @@ bool Instrumenter::threadCreation(){
 ////	return(app->insertSnippet(beforeCall, *entries) != NULL);
 //
 
-	BPatch_function *create = analyser->getFunction("pthread_create");
-	BPatch_function *cineCreate = analyser->getFunction("cine_wrap_thread_create");
-	BPatch_function *replaceCreate = analyser->getFunction("orig_thread_create");
-	return (wrapFunction(create, cineCreate, replaceCreate) &&
-			threadStart());
+	//wrapping version
+//	BPatch_function *create = analyser->getFunction("pthread_create");
+//	BPatch_function *cineCreate = analyser->getFunction("cine_wrap_thread_create");
+//	BPatch_function *replaceCreate = analyser->getFunction("orig_thread_create");
+//	return (wrapFunction(create, cineCreate, replaceCreate) &&
+//			threadStart());
 
 //	BPatch_function *cineCreate = analyser->getFunction("cine_notify_before_create");
 //	vector<BPatch_snippet *>args;
@@ -108,12 +150,9 @@ bool Instrumenter::threadCreation(){
 //	vector<BPatch_point *>pts;
 //	pcreate->getExitPoints(pts);
 
-//	BPatch_function *pcreate = analyser->getFunction("pthread_create");
-//	BPatch_function *cineCreate = analyser->getFunction("cine_thread_create");
-//
-//	vector<BPatch_function *>fs;
-//	analyser->getUsefulFunctions(fs);
-//	return (replaceCalls(fs, pcreate, cineCreate) && threadStart());
+	//relocating version
+
+	return threadCreate() && threadStart();
 //	return threadStart();
 }
 
@@ -229,14 +268,21 @@ bool Instrumenter::wrapFunction(BPatch_function *f, BPatch_function *newf, BPatc
 
 bool Instrumenter::threadStart(){
 	BPatch_function *start = analyser->getFunction("start_thread");
+
 	vector<BPatch_point *> possible;
 	start->getCallPoints(possible);
 
 	for (vector<BPatch_point *>::const_iterator pi = possible.begin();
 			pi != possible.end(); pi++){
 		BPatch_point *callSite = *pi;
+		DEBUG_PRINT(("start calls: %s\n", (callSite->getCalledFunction() ? callSite->getCalledFunction()->getName().c_str() : string("unknown").c_str())));
 		if(callSite->isDynamic()){
 			//this is as good as guess as any
+
+//			for(vector<BPatch_edge*>::const_iterator it = outgoing.begin();
+//					it != outgoing.end(); it++){
+//			}
+
 			BPatch_function *cineStart = analyser->getFunction("cine_start_thread");
 			BPatch_function *cineExit= analyser->getFunction("cine_exit_thread");
 			vector<BPatch_snippet *> args;
@@ -247,8 +293,32 @@ bool Instrumenter::threadStart(){
 			if(in == NULL || out == NULL){
 				return false;
 			}
-
 		}
+//		if(callSite->getCalledFunction()->getName() == analyser->getFunction("_setjmp")->getName()){
+//			vector<BPatch_edge*>outgoing;
+//			callSite->getBlock()->getOutgoingEdges(outgoing);
+//		}
+
+//		if(callSite->getCalledFunction()->getName() == analyser->getFunction("_setjmp")->getName()){
+//			//this is as good as guess as any
+//			BPatch_function *cineStart = analyser->getFunction("cine_start_thread");
+//			vector<BPatch_snippet *> args;
+//			BPatch_funcCallExpr startCall(*cineStart, args);
+//			BPatchSnippetHandle *in = app->insertSnippet(startCall, *callSite, BPatch_callBefore, BPatch_firstSnippet);
+//			if(in == NULL){
+//				return false;
+//			}
+//		}
+//		if(callSite->getCalledFunction()->getName() == analyser->getFunction("__nptl_deallocate_tsd")->getName()){
+//			//this is as good as guess as any
+//			BPatch_function *cineExit= analyser->getFunction("cine_exit_thread");
+//			vector<BPatch_snippet *> args;
+//			BPatch_funcCallExpr exitCall(*cineExit, args);
+//			BPatchSnippetHandle *out = app->insertSnippet(exitCall, *callSite, BPatch_callAfter, BPatch_lastSnippet);
+//			if(out == NULL){
+//				return false;
+//			}
+//		}
 	}
 	return true;
 }

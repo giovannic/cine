@@ -8,14 +8,7 @@
 #include "DynamicLauncher.h"
 #include "AsyncListener.h"
 
-DynamicLauncher::DynamicLauncher(string &input, vector<string *> *args):Launcher(input) {
-	this->args = args;
-	this->app = createProcess();
-	this->analyser = new Analyser(app->getImage());
-	this->inst = new Instrumenter(analyser, app);
-	this->ctrl = new Controller(inst, analyser, app);
-	listener = new AsyncListener(bpatch);
-	setup();
+DynamicLauncher::DynamicLauncher():Launcher() {
 }
 
 DynamicLauncher::~DynamicLauncher() {
@@ -26,9 +19,9 @@ DynamicLauncher::~DynamicLauncher() {
 
 BPatch_process *DynamicLauncher::createProcess(){
 	vector<const char *>argv;
-	for( std::vector<string*>::const_iterator i = args->begin();
+	for( std::vector<string>::const_iterator i = args->begin();
 			i != args->end(); ++i){
-	    argv.push_back((*i)->c_str());
+	    argv.push_back((*i).c_str());
 	}
 	argv.push_back(NULL);
 
@@ -73,7 +66,11 @@ bool DynamicLauncher::launch(){
 }
 
 bool DynamicLauncher::setup(){
-
+	this->app = createProcess();
+	this->analyser = new Analyser(app->getImage());
+	this->inst = new Instrumenter(analyser, app);
+	this->ctrl = new Controller(inst, analyser, app);
+	listener = new AsyncListener(bpatch);
 //	inst->loadLibraries();
 //	inst->timeFunction(analyser->getFunction("watch_count"), 0);
 //	inst->timeFunction(analyser->getFunction("inc_count"), 0);
@@ -93,18 +90,26 @@ bool DynamicLauncher::setup(){
 		return false;
 	}
 
-	if(!inst->threadCreation()){
+//	if(!inst->threadCreation()){
+//		cerr << "thread creation failed" << endl;
+//		return false;
+//	}
+	if(!inst->threadCreate()){
 		cerr << "thread creation failed" << endl;
 		return false;
 	}
+
+//	ctrl->listenThreads();
+
 	if(!inst->threadDestruction()){
 		cerr << "thread destruction failed" << endl;
 		return false;
 	}
-	if(!inst->instrumentContention()){
-		cerr << "contention failed" << endl;
-		return false;
-	}
+
+//	if(!inst->instrumentContention()){
+//		cerr << "contention failed" << endl;
+//		return false;
+//	}
 
 //	if(!inst->time()){
 //		cerr << "time failed" << endl;

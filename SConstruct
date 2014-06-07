@@ -47,8 +47,8 @@ test_env.Program(dest + 'bin/cine', main_sources)
 
 #libcine
 cine_env = Environment()
-cine_sources = ['profiler/cine.cpp']
-cine_env.Append(CPPPATH=['profiler/h', dyninstinc, vexinc])
+cine_sources = ['profiler/collector/cine.cpp']
+cine_env.Append(CPPPATH=['profiler/h', 'profiler/collector/h', dyninstinc, vexinc])
 cine_env.Append(LIBPATH=[dyninstlib, vexlib])
 cine_env.Append(LIBS=['pthread', 'vex', 'dyninstAPI_RT'])
 cine_env.Append(CCFLAGS=['-g'])

@@ -12,7 +12,7 @@
 
 class StaticLauncher: public Launcher{
 public:
-	StaticLauncher(string &input);
+	StaticLauncher();
 	~StaticLauncher();
 	bool launch();
 private:

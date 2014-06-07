@@ -20,11 +20,8 @@
 using namespace std;
 using namespace Dyninst;
 
-StaticLauncher::StaticLauncher(string &input):Launcher(input) {
-	this->bin = openBinary();
-	this->analyser = new Analyser(bin->getImage());
-	this->inst = new Instrumenter(analyser, bin);
-	setup();
+StaticLauncher::StaticLauncher():Launcher() {
+
 }
 
 StaticLauncher::~StaticLauncher() {
@@ -41,6 +38,10 @@ BPatch_binaryEdit *StaticLauncher::openBinary(){
 }
 
 bool StaticLauncher::setup(){
+	this->bin = openBinary();
+	this->analyser = new Analyser(bin->getImage());
+	this->inst = new Instrumenter(analyser, bin);
+
 //	inst->loadLibraries();
 //	inst->timeFunction(analyser->getFunction("inc_count"), 0);
 

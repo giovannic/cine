@@ -8,23 +8,44 @@
 #include"StaticLauncher.h"
 #include"DynamicLauncher.h"
 #include <stdlib.h>
+#include <string>
+
+using namespace std;
 
 int main(int argc, char* argv[]) {
 	//TODO: validate and add program arguments
-	string input(argv[1]);
-	vector<string *> args;
+	list<string> args(argv + 1, argv + argc);
+	Launcher *l;
+	string *input;
+	vector<string> *inputArgs;
 
-	if(argc > 1){
-		string *arg;
-		for(int a = 1; a < argc; a++){
-			arg = new string(argv[a]);
-			args.push_back(arg);
+	while(!args.empty()){
+		string token = args.front();
+		if(token[0] == '-'){ //vexargs
+			args.pop_front();
+
+			if(token == string("-static")){
+				l = new StaticLauncher();
+			} else if(token == string("-dynamic")){
+				l = new DynamicLauncher();
+			} else if(token == string("-speedup")){
+				l->registerSpeedup(args.front(), stod(*(args.begin()++)));
+				args.pop_front(); args.pop_front();
+			}
+
+		} else {
+			input = new string(token);
+			l->setInput(*input);
+			inputArgs = new vector<string>(args.begin(), args.end());
+			l->setArgs(*inputArgs);
+			args.clear();
 		}
 	}
-//	DynamicLauncher l(input, &args);
-	StaticLauncher l(input);
 
-	l.launch();
+	l->setup();
+	l->launch();
 
 	exit(0);
 }
+
+

@@ -14,14 +14,19 @@ using namespace std;
 
 class Launcher{
 public:
-	Launcher(string &input);
+	Launcher();
 	virtual ~Launcher();
 	virtual bool launch()=0;
+	virtual bool setup()=0;
+	virtual bool registerSpeedup(string &function, double speedup);
+	virtual void setInput(string &input);
+	virtual void setArgs(vector<string> &args);
 protected:
 	Instrumenter *inst;
 	Analyser *analyser;
 
 	string *input;
+	vector<string> *args;
 
 	BPatch *bpatch;
 };

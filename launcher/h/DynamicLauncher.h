@@ -14,12 +14,11 @@
 
 class DynamicLauncher: public Launcher {
 public:
-	DynamicLauncher(string &input, vector<string *> *args);
+	DynamicLauncher();
 	virtual ~DynamicLauncher();
 	bool launch();
 	bool setup();
 private:
-	vector<string *> *args;
 	BPatch_process *app;
 	Controller *ctrl;
 	Listener *listener;

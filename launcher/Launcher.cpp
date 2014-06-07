@@ -21,12 +21,25 @@
 using namespace std;
 using namespace Dyninst;
 
-Launcher::Launcher(string &input){
-	this->input = new string(input);
+Launcher::Launcher(){
 	bpatch = new BPatch();
 }
 
 Launcher::~Launcher(){
-	delete input;
 	delete bpatch;
+	delete input;
+	delete args;
+}
+
+void Launcher::setInput(string &input) {
+	this->input = new string(input);
+}
+
+bool Launcher::registerSpeedup(string& function, double speedup) {
+	cout << "speedup not yet implemented" << endl;
+	return false;
+}
+
+void Launcher::setArgs(vector<string> &args) {
+	this->args = new vector<string>(args);
 }
