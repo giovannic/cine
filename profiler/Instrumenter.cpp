@@ -653,15 +653,22 @@ bool Instrumenter::timeFunction(BPatch_function *f, int methodId,
 	return (s !=NULL && e != NULL);
 }
 
-
+bool Instrumenter::staticInitCalls(){
+	BPatch_function * init = analyser->getFunction("cine_static_init");
+	initCalls(init);
+}
 
 bool Instrumenter::initCalls(){
+	BPatch_function * init = analyser->getFunction("cine_init");
+	initCalls(init);
+}
+
+bool Instrumenter::initCalls(BPatch_function *init){
 
 	//generate a call to VEX::initializeSimulator(NULL)
-//	BPatch_function * programStart = analyser->getFunction("_start");
-	BPatch_function * programStart = analyser->getFunction("main");
+	BPatch_function * programStart = analyser->getFunction("_start");
+//	BPatch_function * programStart = analyser->getFunction("main");
 	vector<BPatch_point *> *startPoint = programStart->findPoint(BPatch_entry);
-	BPatch_function * init = analyser->getFunction("cine_init");
 	vector<BPatch_snippet *> args;
 	BPatch_nullExpr null;
 	args.push_back(&null);

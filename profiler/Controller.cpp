@@ -58,7 +58,7 @@ void Controller::listenThreads(){
 
 
 void Controller::listenResults() {
-	Process::registerEventCallback(EventType::Terminate, cine_on_exit);
+	Process::registerEventCallback(EventType::UserThreadDestroy, cine_on_exit);
 }
 
 bool Controller::beginSimulator(){
@@ -109,7 +109,7 @@ void Controller::getResults() {
 
 	//change to be nicer
 	BPatch_constExpr directory("/tmp");
-	BPatch_function *print = analyser->getFunction("cine_get_results");
+	BPatch_function *print = analyser->getFunction("cine_exit_thread");
 
 	vector<BPatch_snippet *>args;
 	args.push_back(&directory);

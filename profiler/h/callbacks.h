@@ -41,8 +41,9 @@ Process::cb_ret_t on_thread_create(Event::const_ptr ev) {
 }
 
 Process::cb_ret_t cine_on_exit(Event::const_ptr ev) {
-	cout << "exited, getting results" << endl;
-	ctrl->getResults();
+	if (ev->getThread())
+		cout << ev->getThread()->getTID() << " exited" << endl;
+//	ctrl->getResults();
 	return Process::cbDefault;
 }
 

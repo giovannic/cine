@@ -22,6 +22,7 @@ public:
 	Instrumenter(Analyser *a, BPatch_addressSpace *as);
 	~Instrumenter();
 	bool initCalls();
+	bool staticInitCalls();
     bool insertThreadCalls();
     bool loadLibraries();
     bool loadPthreads();
@@ -42,6 +43,7 @@ public:
     bool threadDestruction();
     bool debugStart();
 private:
+	bool initCalls(BPatch_function *init);
     bool instrumentThreadEntry(BPatch_function *entryFunction);
     bool instrumentThreadEntry(BPatch_function *entryFunction,
     		BPatch_function *start, BPatch_function *end);

@@ -17,7 +17,7 @@
 #include "CineMessage.h"
 #include "dyninstRTExport.h"
 
-//TODO:put this all into a namespace
+//TODO:separate this
 
 using namespace std;
 using namespace VEX;
@@ -39,6 +39,7 @@ const char *pipefile = "/tmp/cineinv";
 int inv_fifo;
 
 pthread_t init_thread;
+pthread_t vex_thread;
 
 //--Mutex methods
 //put thread calls into a different library so
@@ -87,6 +88,7 @@ int cine_cond_signal(pthread_cond_t *cond){
 int cine_sleep(unsigned int t){
 	DEBUG_PRINT(("sleep %d \n", t));
 	return threadEventsBehaviour->onSleep(t*1000, 0);
+	DEBUG_PRINT(("awake\n", t));
 //	return sleep(t);
 }
 
@@ -117,7 +119,7 @@ int cine_join(pthread_t thread, void **value_ptr){
 void cine_initial_thread(){
 	init_thread = pthread_self();
 	registeredThreads->insert(init_thread);
-	seenThreads->insert(init_thread);
+//	seenThreads->insert(init_thread);
 	threadEventsBehaviour->onThreadMainStart((long)init_thread);
     pthread_mutex_lock(&count_lock);
 	thread_count++;
@@ -136,7 +138,6 @@ void cine_new_thread(){
     pthread_mutex_unlock(&count_lock);
 }
 
-//initialisation
 void cine_init(){
 	if (initialised){
 		cine_new_thread();
@@ -147,9 +148,27 @@ void cine_init(){
 		pthread_cond_init(&newThread, NULL);
 		registeredThreads = new set<pthread_t>();
 		seenThreads = new set<pthread_t>();
-		initializeSimulator(NULL);
+		if(initializeSimulator(NULL)){
+			DEBUG_PRINT(("vex started\n"));
+		}
 		cine_initial_thread();
 		initialised = true;
+	}
+}
+
+//initialisation
+void cine_static_init(){
+	if (initialised){
+		cine_new_thread();
+	} else {
+		pthread_mutex_init(&count_lock, NULL);
+		pthread_mutex_init(&registry_lock, NULL);
+		pthread_cond_init(&newThread, NULL);
+		registeredThreads = new set<pthread_t>();
+		if(initializeSimulator(NULL)){
+			DEBUG_PRINT(("vex started\n"));
+		}
+		cine_initial_thread();
 	}
 }
 
@@ -249,6 +268,13 @@ int cine_thread_create(pthread_t *thread, const pthread_attr_t *attr,
 //}
 
 void cine_start_thread(){
+	if(!initialised){
+		//this is the vex thread
+		vex_thread = pthread_self();
+		initialised = true;
+		return;
+	}
+
 	pthread_t thread = pthread_self();
 	char n[50];
 	pthread_getname_np(thread, n, sizeof(n));
@@ -257,7 +283,6 @@ void cine_start_thread(){
     set<pthread_t>::iterator t = registeredThreads->find(thread);
     while(t == registeredThreads->end()){
     	pthread_cond_wait(&newThread, &registry_lock);
-
     }
 //	threadEventsBehaviour->afterCreatingThread(); //lets hope that this does not block
     pthread_mutex_unlock(&registry_lock);
@@ -267,6 +292,7 @@ void cine_start_thread(){
 	DEBUG_PRINT(("child %s # %d\n", n, thread_count));
 	pthread_mutex_unlock(&count_lock);
 
+	threadEventsBehaviour->afterCreatingThread();
 	threadEventsBehaviour->onStart((long)thread, n);
 }
 
@@ -318,6 +344,10 @@ void cine_teardown(){
 }
 
 void cine_exit_thread(){
+
+	if (pthread_self() == vex_thread){
+		DEBUG_PRINT(("vex just gave up and exited, that's bad\n"));
+	}
 
     pthread_mutex_lock(&count_lock);
 	thread_count--;

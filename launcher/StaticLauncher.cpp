@@ -52,7 +52,12 @@ bool StaticLauncher::setup(){
 		return false;
 	}
 
-	if(!inst->initCalls()){
+	if(!inst->loadPthreads()){
+		cerr << "pthreads did not reload" << endl;
+		return false;
+	}
+
+	if(!inst->staticInitCalls()){
 		cerr << "init calls failed" << endl;
 		return false;
 	}
@@ -65,13 +70,14 @@ bool StaticLauncher::setup(){
 		cerr << "thread destruction failed" << endl;
 		return false;
 	}
+
 	if(!inst->instrumentContention()){
 		cerr << "contention failed" << endl;
 		return false;
 	}
 
-//	if(!inst->insertThreadCalls()){
-//		cerr << "thread calls failed" << endl;
+//	if(!inst->time()){
+//		cerr << "time failed" << endl;
 //		return false;
 //	}
 

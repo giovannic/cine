@@ -73,6 +73,7 @@ bool DynamicLauncher::setup(){
 	this->inst = new Instrumenter(analyser, app);
 	this->ctrl = new Controller(inst, analyser, app);
 	listener = new AsyncListener(bpatch);
+
 //	inst->loadLibraries();
 //	inst->timeFunction(analyser->getFunction("watch_count"), 0);
 //	inst->timeFunction(analyser->getFunction("inc_count"), 0);
@@ -120,8 +121,8 @@ bool DynamicLauncher::setup(){
 //		return false;
 //	}
 
-	//this causes a segfault as dyninst searches for lib=""
-	ctrl->listenResults();
+	//this segfaults
+//	ctrl->listenResults();
 	inst->finalFunction("main");
 
 	bool mod;
