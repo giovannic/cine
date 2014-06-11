@@ -729,9 +729,7 @@ bool Instrumenter::loadLibraries(){
 		return false;
 	}
 
-
 	return true;
-
 }
 
 bool Instrumenter::wrapUp(vector<BPatch_point *> *exitPoints){

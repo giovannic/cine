@@ -49,6 +49,7 @@ pthread_t vex_thread;
 int cine_mutex_lock(pthread_mutex_t *mutex){
 	DEBUG_PRINT(("requesting %lu \n", (long)mutex));
 	threadEventsBehaviour->onRequestingLock((long)mutex);
+	return 0;
 //	return pthread_mutex_lock(mutex);
 }
 
@@ -56,6 +57,7 @@ int cine_mutex_unlock(pthread_mutex_t *mutex){
 	DEBUG_PRINT(("releasing %lu \n", (long)mutex));
 	threadEventsBehaviour->onReleasingLock((long)mutex);
 //	return pthread_mutex_unlock(mutex);
+	return 0;
 }
 
 int cine_cond_wait(pthread_cond_t *cond, pthread_mutex_t *mutex){
@@ -63,6 +65,7 @@ int cine_cond_wait(pthread_cond_t *cond, pthread_mutex_t *mutex){
 	threadEventsBehaviour->beforeReleasingLockOfAnyReplacedWaiting((long) cond, (long)mutex, true);
 	threadEventsBehaviour->onReplacedWaiting((long)cond, (long)mutex, true);
 //	return pthread_cond_wait(cond, mutex);
+	return 0;
 }
 
 int cine_cond_timedwait(pthread_cond_t *cond,
@@ -71,18 +74,21 @@ int cine_cond_timedwait(pthread_cond_t *cond,
 	threadEventsBehaviour->beforeReleasingLockOfAnyReplacedWaiting((long)cond, (long)mutex, true);
 	threadEventsBehaviour->onReplacedTimedWaiting((long)cond, (long)mutex, abstime->tv_sec, abstime->tv_nsec, true);
 //	return pthread_cond_timedwait(cond, mutex, abstime);
+	return 0;
 }
 
 int cine_cond_broadcast(pthread_cond_t *cond){
 	DEBUG_PRINT(("broadcast %lu \n", (long)cond));
 	threadEventsBehaviour->onBroadcastingOnObject((long)cond);
 //	return pthread_cond_signal(cond);
+	return 0;
 }
 
 int cine_cond_signal(pthread_cond_t *cond){
 	DEBUG_PRINT(("signal %lu \n", (long)cond));
 	threadEventsBehaviour->onSignallingOnObject((long)cond);
 //	return pthread_cond_broadcast(cond);
+	return 0;
 }
 
 int cine_sleep(unsigned int t){
@@ -90,12 +96,14 @@ int cine_sleep(unsigned int t){
 	return threadEventsBehaviour->onSleep(t*1000, 0);
 	DEBUG_PRINT(("awake\n", t));
 //	return sleep(t);
+	return 0;
 }
 
 int cine_yield(){
 	DEBUG_PRINT(("yield \n"));
 	threadEventsBehaviour->onYield();
 //	return pthread_yield();
+	return 0;
 }
 
 time_t cine_time(time_t *t){
@@ -113,6 +121,7 @@ int cine_join(pthread_t thread, void **value_ptr){
 	pthread_join(thread, value_ptr);
 	DEBUG_PRINT(("joined \n"));
 //	return pthread_join(thread, value_ptr);
+	return 0;
 }
 
 //thread registering
