@@ -56,3 +56,4 @@ if debug:
 	cine_env.Append(CPPDEFINES=['CINEDEBUG'])
 
 cine = cine_env.SharedLibrary(dest + 'lib/cine.so', cine_sources)
+

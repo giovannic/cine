@@ -1,0 +1,23 @@
+,*Mean* per method times in ms
+Rank,Method name,Invocations,self%,accum%,Total time,CPU Time,Waiting,I/O,Runnable,Total time-inclusive,CPU Time-inclusive,Waiting-inclusive,I/O-inclusive,Runnable-inclusive
+1,bs_thread,1,88.81,88.81,148307.248,148307.143,0.000,0.000,0.106,148307.248,148307.143,0.000,0.000,0.106
+2,main,1,11.19,100.00,166986.824,18679.608,0.000,0.000,148307.215,166986.824,18679.608,0.000,0.000,148307.215
+3,_init,1,0.00,100.00,0.003,0.003,0.000,0.000,0.000,0.003,0.003,0.000,0.000,0.000
+4,__libc_csu_init,1,0.00,100.00,0.002,0.002,0.000,0.000,0.000,0.005,0.005,0.000,0.000,0.000
+5,frame_dummy,1,0.00,100.00,0.000,0.000,0.000,0.000,0.000,0.000,0.000,0.000,0.000,0.000
+
+Simulation execution time in ms,167368.705
+Estimated Execution Time (EET) in ms,166986.873
+Aggregate-Serialized Execution Time (AET) in ms,166986.757
+Average Parallelism (AET/EET),1.000
+Compensation for instrumentation delay,0
+Compensation for IP delay,0
+Compensation for I/O instrumentation delay,0
+Compensation for sched_yield system call,0
+Total GC time [ms],0.000
+Total collections,0
+Mean GC time,-nan
+Maximum stack depth,0
+Threads controlled,2
+VEX signals sent,3213
+Total profiled method invocations,5-0
