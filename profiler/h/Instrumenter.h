@@ -48,13 +48,14 @@ public:
     bool threadDestruction();
     bool debugStart();
     bool registerMethods(SpeedupMap &speedups);
+    void removeTime(int mid);
 private:
     Analyser *analyser;
 	BPatch_addressSpace *app;
 	vector<BPatchSnippetHandle *> *timers;
 	vector<BPatch_object *> *cinemodules;
 	typedef unordered_map<BPatch_function*, BPatch_function*> ReplaceMap;
-	typedef unordered_map<int, BPatch_function*> IdMap;
+	typedef map<int, vector<BPatchSnippetHandle *>*>IdMap;
 	ReplaceMap *replacemap;
 	IdMap *idMap;
 

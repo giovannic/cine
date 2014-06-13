@@ -11,7 +11,6 @@
 
 DynamicLauncher::DynamicLauncher():Launcher() {
 	bpatch->setDelayedParsing(false);
-	listener = new AsyncListener(bpatch);
 }
 
 DynamicLauncher::~DynamicLauncher() {
@@ -73,7 +72,7 @@ bool DynamicLauncher::setup(){
 	this->analyser = new Analyser(app->getImage());
 	this->inst = new Instrumenter(analyser, app);
 	this->ctrl = new Controller(inst, analyser, app);
-	listener = new AsyncListener(bpatch);
+	listener = new AsyncListener(inst, bpatch);
 
 	parseMethodFile();//this should be an argument to analyser
 
@@ -104,7 +103,7 @@ bool DynamicLauncher::setup(){
 		}
 		/*patch call to user message*/
 //		inst->patchUserMessage();
-		listener->listen(inst);
+		listener->listen();
 	}
 
 	if(!inst->threadCreation()){

@@ -657,6 +657,11 @@ bool Instrumenter::timeFunction(BPatch_function *f, int methodId,
 
 	BPatchSnippetHandle *s = app->insertSnippet(timerStartCall, *entries, BPatch_lastSnippet);
 	BPatchSnippetHandle *e = app->insertSnippet(timerStopCall, *exits, BPatch_firstSnippet);
+	vector<BPatchSnippetHandle *>* ss;
+	ss = new vector<BPatchSnippetHandle *> ();
+	ss->push_back(s);
+	ss->push_back(e);
+	(*idMap)[methodId] = ss;
 	return (s !=NULL && e != NULL);
 }
 
@@ -747,7 +752,6 @@ bool Instrumenter::registerMethods(SpeedupMap &speedups){
 			registerSpeedup(mid, (*record).second);
 		}
 
-		(*idMap)[mid] = f;
 		if(!timeFunction(f, mid)){
 			DEBUG_PRINT(("method cannot be timed\n"));
 		}
@@ -918,6 +922,22 @@ bool Instrumenter::loadDyninst() {
 		return false;
 	}
 	return true;
+}
+
+void Instrumenter::removeTime(int mid) {
+	vector<BPatchSnippetHandle *>*ss = (*idMap)[mid];
+	if (ss == NULL){
+		return;
+	}
+	for (vector<BPatchSnippetHandle *>::const_iterator it = ss->begin();
+			it != ss->end(); it++){
+		BPatchSnippetHandle *s = *it;
+		if(app->deleteSnippet(s)){
+//			cout << "actually removed " << mid << endl;
+		}
+	}
+	idMap->erase(mid);
+	delete ss;
 }
 //void Instrumenter::patchUserMessage() {
 //	BPatch_function *invalidate = analyser->getFunction("cine_timer_invalidate_exit");

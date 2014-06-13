@@ -9,6 +9,7 @@
 #define LISTENER_H_
 
 #include "pthread.h"
+#include "Instrumenter.h"
 
 class Listener {
 public:
@@ -18,6 +19,7 @@ public:
 private:
 	pthread_t listener;
 	int invFifo;
+protected:
 	Instrumenter *inst;
 };
 
