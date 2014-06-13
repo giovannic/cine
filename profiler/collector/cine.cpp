@@ -15,7 +15,7 @@
 #include "cine.h"
 #include "debug.h"
 #include "CineMessage.h"
-#include "dyninstRTExport.h"
+#include <dlfcn.h>
 
 //TODO:separate this
 
@@ -157,6 +157,8 @@ void cine_init(){
 		pthread_cond_init(&newThread, NULL);
 		registeredThreads = new set<pthread_t>();
 		seenThreads = new set<pthread_t>();
+		void *RTlib = dlopen("libdyninstAPI_RT.so", RTLD_NOW);
+		DYNINSTuserMessageSym = (int(*)(void*, unsigned int))dlsym(RTlib, "DYNINSTuserMessage");
 		if(initializeSimulator(NULL)){
 			DEBUG_PRINT(("vex started\n"));
 		}
@@ -306,7 +308,7 @@ void cine_start_thread(){
 }
 
 void cine_timer_entry(int id){
-	DEBUG_PRINT(("entry %d %lu\n", id, pthread_self()));
+//	DEBUG_PRINT(("entry %d %lu\n", id, pthread_self()));
 	//recursive methods do not matter
 	methodEventsBehaviour->afterMethodEntry(id);
 }
@@ -328,18 +330,22 @@ void cine_timer_entry_thread_check(int id){
 }
 
 void cine_timer_exit(int id){
-	DEBUG_PRINT(("exit %d %lu\n", id, pthread_self()));
-	methodEventsBehaviour->beforeMethodExit(id);
+//	DEBUG_PRINT(("exit %d %lu\n", id, pthread_self()));
+	if(methodEventsBehaviour->beforeMethodExit(id)){
+		eventLogger->getMethodDataOf(id)->setInvalidated();
+//		cout << eventLogger->getMethodDataOf(id)->getName() << endl;
+	}
 }
 
 void cine_timer_invalidate_exit(int id){
 	DEBUG_PRINT(("exit %d %lu\n", id, pthread_self()));
-	if(methodEventsBehaviour->beforeMethodExit(id) || true){
+	if(methodEventsBehaviour->beforeMethodExit(id)){
 		InvMsg_t *msg = new InvMsg();
 		msg->mid = id;
-		if (DYNINSTuserMessage(msg, id) != 0){
+		if ((*DYNINSTuserMessageSym)(msg, id) != 0){
 			DEBUG_PRINT(("message failed\n"));
 		}
+		eventLogger->getMethodDataOf(id)->setInvalidated();
 	}
 }
 
@@ -353,6 +359,10 @@ void cine_teardown(){
 }
 
 void cine_exit_thread(){
+
+	if (end_count > 0){
+		return;
+	}
 
 	if (pthread_self() == vex_thread){
 		DEBUG_PRINT(("vex just gave up and exited, that's bad\n"));
@@ -368,6 +378,7 @@ void cine_exit_thread(){
     pthread_mutex_unlock(&count_lock);
 
 	if(pthread_self() == init_thread){
+		end_count++;
 		cine_teardown();
 	}
 
@@ -385,9 +396,19 @@ void cine_exit_thread(){
 //	pthread_exit(0);
 }
 
+void cine_invalidation_registration(char *policy){
+	DEBUG_PRINT(("registering invalidation %s \n", policy));
+	methodEventsBehaviour->registerInvalidationPolicy(policy);
+}
+
 void cine_method_registration(char *name, int mid){
 	DEBUG_PRINT(("registering %s %d \n", name, mid));
 	eventLogger->registerMethod(name, mid);
+}
+
+void cine_speedup_registration(int mid, long speedup){
+	DEBUG_PRINT(("registering %d %lu \n", mid, speedup));
+	methodEventsBehaviour->registerMethodTimeScalingFactor(mid, (double)speedup);
 }
 
 void print_address(void *dest){

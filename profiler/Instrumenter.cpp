@@ -11,6 +11,8 @@
 #include "BPatch_function.h"
 #include "BPatch_point.h"
 #include "BPatch_flowGraph.h"
+#include "BPatch_object.h"
+#include "BPatch_module.h"
 #include "Symtab.h"
 #include "Symbol.h"
 #include "Command.h"
@@ -23,11 +25,15 @@ Instrumenter::Instrumenter(Analyser *a, BPatch_addressSpace *as){
 	analyser = a;
 	app = as;
 	timers = new vector<BPatchSnippetHandle *>();
+	cinemodules = new vector<BPatch_object *>();
+	replacemap = new ReplaceMap();
+	idMap = new IdMap();
 	//cache function calls
 }
 
 Instrumenter::~Instrumenter(){
 	delete timers;
+	delete cinemodules;
 }
 
 /*
@@ -87,7 +93,7 @@ bool Instrumenter::threadLocklessCreate(){
 	BPatch_function *pcreate = analyser->getFunction("pthread_create");
 	BPatch_function *cineCreate = analyser->getFunction("cine_lockless_thread_create");
 
-	vector<BPatch_function *>*fs = analyser->getUsefulFunctions();
+	vector<BPatch_function *>*fs = analyser->getFunctionSet();
 	return replaceCalls(*fs, pcreate, cineCreate);
 }
 
@@ -120,7 +126,7 @@ bool Instrumenter::threadCreate(){
 	BPatch_function *pcreate = analyser->getFunction("pthread_create");
 	BPatch_function *cineCreate = analyser->getFunction("cine_thread_create");
 
-	vector<BPatch_function *>*fs = analyser->getUsefulFunctions();
+	vector<BPatch_function *>*fs = analyser->getFunctionSet();
 	return replaceCalls(*fs, pcreate, cineCreate);
 //	return threadStart();
 }
@@ -163,7 +169,7 @@ bool Instrumenter::threadDestruction() {
 	BPatch_function *cineDestroyAll = analyser->getFunction("cine_teardown");
 
 	vector<BPatch_function *>*fs;
-	fs = analyser->getUsefulFunctions();
+	fs = analyser->getFunctionSet();
 	return (replaceCalls(*fs, pexit, cineDestroy) &&
 			replaceCalls(*fs, fExit, cineDestroyAll));
 }
@@ -382,7 +388,7 @@ bool Instrumenter::instrumentSleep() {
 	BPatch_function *cineJoin = analyser->getFunction("cine_join");
 
 	vector<BPatch_function *> *fs;
-	fs = analyser->getUsefulFunctions();
+	fs = analyser->getFunctionSet();
 
 	return (replaceCalls(*fs, sleep, cineSleep) &&
 			replaceCalls(*fs, yield, cineYield) &&
@@ -399,7 +405,7 @@ bool Instrumenter::threadMutex(){
 	//pthread_cond_timed_wait
 
 	vector<BPatch_function *> *fs;
-	fs = analyser->getUsefulFunctions();
+	fs = analyser->getFunctionSet();
 
 	//this will regex search and find the mangled name
 	BPatch_function *mutexLock = analyser->getFunction("pthread_mutex_lock");
@@ -511,7 +517,7 @@ bool Instrumenter::timeFunctionCalls(BPatch_function *f, int methodId){
 
 	vector<BPatch_function *>*useful;
 	vector<BPatch_point *>callpts;
-	useful = analyser->getUsefulFunctions();
+	useful = analyser->getFunctionSet();
 	for(vector<BPatch_function *>::const_iterator it = useful->begin();
 			it != useful->end(); ++it){
 		BPatch_function *usefulF = *it;
@@ -604,6 +610,9 @@ bool Instrumenter::timeFunction(BPatch_function *f, int methodId,
 //	}
 //
 //	return patcher.commit();
+	if(analyser->toIgnore->find(f) != analyser->toIgnore->end()){
+		cout << f->getName() << " is filtering through" << endl;
+	}
 
 	vector<BPatch_point *> *entries = f->findPoint(BPatch_entry);
 	vector<BPatch_point *> *exits = f->findPoint(BPatch_exit);
@@ -616,8 +625,6 @@ bool Instrumenter::timeFunction(BPatch_function *f, int methodId,
 	args.push_back(&mid);
 
 	//if you pthread_exit before the end
-
-
 
 	BPatch_point *allExit;
 	if(fExit && (allExit = analyser->hasCall(f, fExit)) != NULL){
@@ -653,6 +660,28 @@ bool Instrumenter::timeFunction(BPatch_function *f, int methodId,
 	return (s !=NULL && e != NULL);
 }
 
+bool Instrumenter::addPolicy(string& policy){
+	BPatch_function *ireg = analyser->getFunction("cine_invalidation_registration");
+
+	BPatch_function * programStart = analyser->getFunction("_start");
+	vector<BPatch_point *> *startPoint = programStart->findPoint(BPatch_entry);
+	bool err;
+	vector<BPatch_snippet *> margs;
+	const char *n = policy.c_str();
+	BPatch_constExpr name(n);
+	margs.push_back(&name);
+
+	BPatch_funcCallExpr iregCall(*ireg, margs);
+	if(app->insertSnippet(iregCall, *startPoint, BPatch_lastSnippet) == NULL){
+		DEBUG_PRINT(("invalidation cannot be registered \n"));
+	}
+	if(err){
+		return false;
+	}
+
+	return true;
+}
+
 bool Instrumenter::staticInitCalls(){
 	BPatch_function * init = analyser->getFunction("cine_static_init");
 	initCalls(init);
@@ -678,7 +707,22 @@ bool Instrumenter::initCalls(BPatch_function *init){
 		return false;
 	}
 
-	//register methods
+
+	//cine does this now
+//	BPatch_function * threadInit = analyser->getFunction("cine_initial_thread");
+//	vector<BPatch_snippet *> targs;
+//	BPatch_funcCallExpr threadInitCall(*threadInit, targs);
+//
+//	if(app->insertSnippet(threadInitCall, *startPoint, BPatch_lastSnippet) == NULL){
+//		return false;
+//	}
+
+	return true;
+
+}
+
+bool Instrumenter::registerMethods(SpeedupMap &speedups){
+		//register methods
 	BPatch_function *reg = analyser->getFunction("cine_method_registration");
 	vector<BPatch_function *> *ms;
 	ms = analyser->getUsefulFunctions();
@@ -694,47 +738,71 @@ bool Instrumenter::initCalls(BPatch_function *init){
 		margs.push_back(&id);
 
 		BPatch_funcCallExpr regCall(*reg, margs);
-		if(app->insertSnippet(regCall, *startPoint, BPatch_lastSnippet) == NULL){
+		if(app->insertSnippet(regCall, *analyser->getStartPoint(), BPatch_lastSnippet) == NULL){
 			DEBUG_PRINT(("method cannot be registered \n"));
 		}
 
+		map<BPatch_function*,long>::iterator record;
+		if((record = speedups.find(f)) != speedups.end()){
+			registerSpeedup(mid, (*record).second);
+		}
+
+		(*idMap)[mid] = f;
 		if(!timeFunction(f, mid)){
 			DEBUG_PRINT(("method cannot be timed\n"));
 		}
 		mid++;
 	}
-
-	//cine does this now
-//	BPatch_function * threadInit = analyser->getFunction("cine_initial_thread");
-//	vector<BPatch_snippet *> targs;
-//	BPatch_funcCallExpr threadInitCall(*threadInit, targs);
-//
-//	if(app->insertSnippet(threadInitCall, *startPoint, BPatch_lastSnippet) == NULL){
-//		return false;
-//	}
-
 	return true;
+}
 
+bool Instrumenter::instrumentLibraries(){
+//	vector<BPatch_module *>ms;
+//	for (vector<BPatch_object*>::const_iterator it = cinemodules->begin();
+//			it != cinemodules->end(); it++){
+//		BPatch_object *o = *it;
+//		o->modules(ms);
+//
+//		for (vector<BPatch_module*>::const_iterator im = ms.begin();
+//			im != ms.end(); im++){
+//			BPatch_module *m = *im;
+//			vector<BPatch_function*>mfs =  m->getProcedures();
+//			for (vector<BPatch_function*>::const_iterator itf = mfs.begin();
+//					itf != mfs.end(); itf++){
+//				vector<BPatch_point*>calls;
+//				(*itf)->getCallPoints(calls);
+//				for (vector<BPatch_point*>::const_iterator call = calls.begin();
+//						call != calls.end(); call++){
+//					manageCall(*call);
+//				}
+//			}
+//		}
+//	}
+	return false;
 }
 
 bool Instrumenter::loadLibraries(){
 
-	if(!app->loadLibrary("libvex.so")){
+	BPatch_object *lib;
+
+	if((lib = app->loadLibrary("libvex.so")) == NULL){
 		cerr << "target loading of vex failed" << endl;
 		return false;
 	}
+	cinemodules->push_back(lib);
 
-	if(!app->loadLibrary("libcine.so")){
+	if((lib = app->loadLibrary("libcine.so")) == NULL){
 		cerr << "target loading of cine failed" << endl;
 		return false;
 	}
+	cinemodules->push_back(lib);
 
 	return true;
 }
 
 bool Instrumenter::wrapUp(vector<BPatch_point *> *exitPoints){
 	vector<BPatch_snippet *>args;
-	BPatch_function *cineCleanup = analyser->getFunction("cine_teardown");
+	BPatch_function *cineCleanup = analyser->getFunction("cine_exit_thread");
 	BPatch_funcCallExpr cleanupCall(*cineCleanup, args);
 
 	//should exit all threads -> vex stuff
@@ -822,7 +890,7 @@ bool Instrumenter::loadPthreads() {
 
 bool Instrumenter::time() {
 	vector<BPatch_function *> *fs;
-	fs = analyser->getUsefulFunctions();
+	fs = analyser->getFunctionSet();
 	BPatch_function *time = analyser->getFunction("time");
 	BPatch_function *cineTime = analyser->getFunction("cine_time");
 	if(time == NULL){
@@ -830,3 +898,27 @@ bool Instrumenter::time() {
 	}
 	return replaceCalls(*fs, time, cineTime);
 }
+
+void Instrumenter::manageCall(BPatch_point* call) {
+//	if(call->getCalledFunction())
+}
+
+bool Instrumenter::registerSpeedup(int mid, long speedup) {
+	BPatch_function *reg = analyser->getFunction("cine_speedup_registration");
+	vector<BPatch_snippet *> margs;
+	BPatch_constExpr id(mid);
+	margs.push_back(&id);
+	BPatch_constExpr speeduparg((long)speedup);
+	margs.push_back(&speeduparg);
+}
+
+bool Instrumenter::loadDyninst() {
+	if(!app->loadLibrary("libdyninstAPI_RT.so.8.2.0")){
+		cerr << "reloading of dyninst failed" << endl;
+		return false;
+	}
+	return true;
+}
+//void Instrumenter::patchUserMessage() {
+//	BPatch_function *invalidate = analyser->getFunction("cine_timer_invalidate_exit");
+//}

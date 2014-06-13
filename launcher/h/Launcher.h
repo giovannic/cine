@@ -9,6 +9,8 @@
 #define LAUNCHER_HPP_
 #include "BPatch.h"
 #include "Instrumenter.h"
+#include "BPatch_function.h"
+#include <map>
 
 using namespace std;
 
@@ -19,6 +21,9 @@ public:
 	virtual bool launch()=0;
 	virtual bool setup()=0;
 	virtual bool registerSpeedup(string &function, double speedup);
+	virtual bool registerInvalidation(string &policy);
+	virtual bool registerMethodFile(string &mFile);
+	virtual void parseMethodFile();
 	virtual void setInput(string &input);
 	virtual void setArgs(vector<string> &args);
 protected:
@@ -27,6 +32,9 @@ protected:
 
 	string *input;
 	vector<string> *args;
+	string *policy;
+	string *mFile;
+	SpeedupMap *speedups;
 
 	BPatch *bpatch;
 };

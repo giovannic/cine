@@ -24,10 +24,12 @@ public:
 	BPatch_thread *getEventThread(Dyninst::ProcControlAPI::Event::const_ptr ev);
 	bool registerThreadStart(BPatch_thread *t);
 	bool registerThreadStart(Dyninst::Address a);
+	bool registerInvalidation(string &policy);
 	bool beginSimulator();
-	bool registerMethods();
+	bool registerMethods(bool invalidating);
 	void cleanupListener();
 private:
+	void listenInvalidation();
 	Instrumenter *inst;
 	BPatch_process *proc;
 	Analyser *analyser;

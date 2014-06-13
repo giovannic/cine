@@ -12,12 +12,13 @@
 
 class Listener {
 public:
-	Listener();
+	Listener(Instrumenter *inst);
 	virtual ~Listener();
 	virtual bool listen();
 private:
 	pthread_t listener;
 	int invFifo;
+	Instrumenter *inst;
 };
 
 

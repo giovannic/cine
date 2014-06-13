@@ -11,6 +11,7 @@
 
 DynamicLauncher::DynamicLauncher():Launcher() {
 	bpatch->setDelayedParsing(false);
+	listener = new AsyncListener(bpatch);
 }
 
 DynamicLauncher::~DynamicLauncher() {
@@ -74,6 +75,8 @@ bool DynamicLauncher::setup(){
 	this->ctrl = new Controller(inst, analyser, app);
 	listener = new AsyncListener(bpatch);
 
+	parseMethodFile();//this should be an argument to analyser
+
 //	inst->loadLibraries();
 //	inst->timeFunction(analyser->getFunction("watch_count"), 0);
 //	inst->timeFunction(analyser->getFunction("inc_count"), 0);
@@ -89,9 +92,19 @@ bool DynamicLauncher::setup(){
 		return false;
 	}
 
-	if(!ctrl->registerMethods()){
+	if(!ctrl->registerMethods(policy != NULL)){
 		cerr << "unable to register methods" << endl;
 		return false;
+	}
+
+	if(policy != NULL){
+		if(!ctrl->registerInvalidation(*policy)){
+			cerr << "unable to register invalidation" << endl;
+			return false;
+		}
+		/*patch call to user message*/
+//		inst->patchUserMessage();
+		listener->listen(inst);
 	}
 
 	if(!inst->threadCreation()){

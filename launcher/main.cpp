@@ -31,6 +31,12 @@ int main(int argc, char* argv[]) {
 			} else if(token == string("-speedup")){
 				l->registerSpeedup(args.front(), stod(*(args.begin()++)));
 				args.pop_front(); args.pop_front();
+			} else if(token == string("-adapt")){
+				l->registerInvalidation(args.front());
+				args.pop_front();
+			} else if(token == string("-methodfile")){
+				l->registerMethodFile(args.front());
+				args.pop_front();
 			}
 
 		} else {
