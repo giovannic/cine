@@ -20,6 +20,10 @@ Analyser::Analyser(BPatch_image *img) {
 	this->img = img;
 	searchCache = new SearchCache_t();
 	functionSet = NULL;
+	useful = NULL;
+	toIgnore = new set<BPatch_function*>();
+	useless = new set<BPatch_function*>();
+	getAllUselessFunctions();
 }
 
 Analyser::~Analyser() {
@@ -41,12 +45,13 @@ bool Analyser::getUsefulModules(vector<BPatch_module *> &ms){
 	return true;
 }
 
-vector<BPatch_function *> *Analyser::getUsefulFunctions(){
+vector<BPatch_function *> *Analyser::getFunctionSet(){
 	if (functionSet != NULL){
 		return functionSet;
 	}
 
 	functionSet = new vector<BPatch_function *>();
+	useful = new vector<BPatch_function *>();
 	vector<BPatch_module *>ms;
 	vector<BPatch_function *> *mfs;
 
@@ -58,19 +63,41 @@ vector<BPatch_function *> *Analyser::getUsefulFunctions(){
 
 		if(!m->isSharedLib() && !m->isSystemLib()){
 			mfs = m->getProcedures();
-			functionSet->insert(functionSet->end(), mfs->begin(), mfs->end());
+			for(vector<BPatch_function*>::const_iterator mit = mfs->begin();
+					mit != mfs->end(); mit++){
+				BPatch_function *f = *mit;
+				functionSet->push_back(f);
+				if(toIgnore->find(f) == toIgnore->end() && useless->find(f) == useless->end()){
+					useful->push_back(f);
+				}
+			}
+//			functionSet->insert(functionSet->end(), mfs->begin(), mfs->end());
 		}
 	}
 
 	return functionSet;
 }
 
+vector<BPatch_function *> *Analyser::getUsefulFunctions(){
+	if (useful == NULL){
+		getFunctionSet();
+	}
+	cout << "profiling " << useful->size() << endl;
+	return useful;
+}
 
 vector<BPatch_function *>Analyser::getAllFunctions(string s){
 	vector<BPatch_function *> fs;
 	const char *sArg = s.c_str();
 	img->findFunction(sArg, fs);
 	return fs;
+}
+
+void Analyser::getAllUselessFunctions(){
+	vector<BPatch_function *> fs;
+	img->findFunction(".*operator.*", fs);
+	cout << "this many operators " << fs.size() << endl;
+	useless->insert(fs.begin(), fs.end());
 }
 
 BPatch_function *Analyser::getStartThread(){
@@ -123,6 +150,10 @@ void Analyser::getCalls(BPatch_function *f, BPatch_function *newF, vector<BPatch
 	}
 }
 
+BPatch_point* Analyser::getStartPoint() {
+	return getFunction("_start")->findPoint(BPatch_entry)->front();
+}
+
 bool Analyser::callMatches(BPatch_function *a, BPatch_function *b){
 	return a == b;
 //	vector<BPatch_point *> aEntries;
@@ -151,6 +182,10 @@ BPatch_point *Analyser::hasCall(BPatch_function *f, BPatch_function *calleeF){
 		}
 	}
 	return NULL;
+}
+
+void Analyser::ignore(BPatch_function* f) {
+	toIgnore->insert(f);
 }
 
 //	BPatch_function *mutexLock = analyser->getFunction("pthread_mutex_lock");

@@ -14,7 +14,7 @@ using namespace Dyninst;
 
 class AsyncListener : public Listener {
 public:
-	AsyncListener(BPatch *bpatch);
+	AsyncListener(Instrumenter *inst, BPatch *bpatch);
 	virtual ~AsyncListener();
 	bool listen();
 private:

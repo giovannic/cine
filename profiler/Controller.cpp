@@ -71,7 +71,26 @@ bool Controller::beginSimulator(){
 	return true;
 }
 
-bool Controller::registerMethods(){
+bool Controller::registerInvalidation(string &policy){
+
+	BPatch_function *reg = analyser->getFunction("cine_invalidation_registration");
+
+	bool err;
+	vector<BPatch_snippet *> margs;
+	const char *n = policy.c_str();
+	BPatch_constExpr name(n);
+	margs.push_back(&name);
+
+	BPatch_funcCallExpr regCall(*reg, margs);
+	proc->oneTimeCode(regCall, &err);
+	if(err){
+		return false;
+	}
+
+	return true;
+}
+
+bool Controller::registerMethods(bool invalidating=false){
 	vector<BPatch_function *> *fs;
 	fs = analyser->getUsefulFunctions();
 
@@ -96,8 +115,11 @@ bool Controller::registerMethods(){
 			return false;
 		}
 
-//		inst->timeFunctionInvalidating(f, mid);
-		inst->timeFunction(f, mid);
+		if (invalidating){
+			inst->timeFunctionInvalidating(f, mid);
+		} else {
+			inst->timeFunction(f, mid);
+		}
 //		inst->timeFunctionCalls(f, mid);
 
 		mid++;

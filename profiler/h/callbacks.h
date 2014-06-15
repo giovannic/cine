@@ -14,6 +14,7 @@
 #include "Event.h"
 #include "BPatch_process.h"
 #include "BPatch_thread.h"
+#include "CineMessage.h"
 
 using namespace std;
 using namespace Dyninst::ProcControlAPI;

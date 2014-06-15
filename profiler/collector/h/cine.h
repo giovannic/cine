@@ -23,6 +23,7 @@ int cine_cond_wait(pthread_cond_t *cond,pthread_mutex_t *mutex);
 int cine_mutex_unlock(pthread_mutex_t *mutex);
 int cine_mutex_lock(pthread_mutex_t *mutex);
 
+int (*DYNINSTuserMessageSym)(void *, unsigned int);
 /*
 extern using namespace VEX;
 extern using namespace std;

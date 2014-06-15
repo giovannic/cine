@@ -20,10 +20,11 @@
 
 using namespace std;
 
-Listener::Listener() {
+Listener::Listener(Instrumenter *inst) {
 	// TODO Auto-generated constructor stub
 	listener = 0;
 	invFifo = -1;
+	this->inst = inst;
 }
 
 Listener::~Listener() {

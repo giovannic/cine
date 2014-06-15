@@ -72,7 +72,9 @@ bool DynamicLauncher::setup(){
 	this->analyser = new Analyser(app->getImage());
 	this->inst = new Instrumenter(analyser, app);
 	this->ctrl = new Controller(inst, analyser, app);
-	listener = new AsyncListener(bpatch);
+	listener = new AsyncListener(inst, bpatch);
+
+	parseMethodFile();//this should be an argument to analyser
 
 //	inst->loadLibraries();
 //	inst->timeFunction(analyser->getFunction("watch_count"), 0);
@@ -89,9 +91,19 @@ bool DynamicLauncher::setup(){
 		return false;
 	}
 
-	if(!ctrl->registerMethods()){
+	if(!ctrl->registerMethods(policy != NULL)){
 		cerr << "unable to register methods" << endl;
 		return false;
+	}
+
+	if(policy != NULL){
+		if(!ctrl->registerInvalidation(*policy)){
+			cerr << "unable to register invalidation" << endl;
+			return false;
+		}
+		/*patch call to user message*/
+//		inst->patchUserMessage();
+		listener->listen();
 	}
 
 	if(!inst->threadCreation()){

@@ -62,10 +62,26 @@ bool StaticLauncher::setup(){
 		return false;
 	}
 
+	if(mFile != NULL){
+		parseMethodFile();
+	}
+
+	if(!inst->registerMethods(*speedups)){
+		return false;
+	}
+
+	if(policy != NULL){
+		if(!inst->addPolicy(*policy)){
+			cerr << "unable to register invalidation" << endl;
+			return false;
+		}
+	}
+
 	if(!inst->threadCreation()){
 		cerr << "thread creation failed" << endl;
 		return false;
 	}
+
 	if(!inst->threadDestruction()){
 		cerr << "thread destruction failed" << endl;
 		return false;

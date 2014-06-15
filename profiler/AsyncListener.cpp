@@ -14,7 +14,9 @@
 using namespace std;
 using namespace Dyninst::ProcControlAPI;
 
-AsyncListener::AsyncListener(BPatch *bpatch) : Listener() {
+Instrumenter *callbackInst;
+
+AsyncListener::AsyncListener(Instrumenter *inst, BPatch *bpatch) : Listener(inst) {
 	this->bpatch = bpatch;
 }
 AsyncListener::~AsyncListener() {
@@ -23,10 +25,11 @@ AsyncListener::~AsyncListener() {
 void invalidate(BPatch_process *proc,
 		void *buf, unsigned int bufsize){
 	InvMsg_t *inv = (InvMsg_t *)buf;
-	cout << "about to invalidate" << inv->mid << endl;
+	callbackInst->removeTime(inv->mid);
 }
 
 
 bool AsyncListener::listen() {
+	callbackInst = inst;
 	return bpatch->registerUserEventCallback(invalidate);
 }
