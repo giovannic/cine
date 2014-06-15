@@ -106,27 +106,26 @@ bool DynamicLauncher::setup(){
 		listener->listen();
 	}
 
-	if(!inst->threadCreation()){
-		cerr << "thread creation failed" << endl;
-		return false;
-	}
-
-//	if(!inst->threadCreate()){
+//	if(!inst->relocatePthreads()){
+//		cerr << "pthread relocation failed" << endl;
+//		return false;
+//	}
+//	if(!inst->threadCreation()){
 //		cerr << "thread creation failed" << endl;
 //		return false;
 //	}
 
 //	ctrl->listenThreads();
 
-	if(!inst->threadDestruction()){
-		cerr << "thread destruction failed" << endl;
-		return false;
-	}
-
-	if(!inst->instrumentContention()){
-		cerr << "contention failed" << endl;
-		return false;
-	}
+//	if(!inst->threadDestruction()){
+//		cerr << "thread destruction failed" << endl;
+//		return false;
+//	}
+//
+//	if(!inst->instrumentContention()){
+//		cerr << "contention failed" << endl;
+//		return false;
+//	}
 
 //	if(!listener->listen()){
 //		cerr << "invalidation failed" << endl;

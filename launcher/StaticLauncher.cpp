@@ -52,10 +52,10 @@ bool StaticLauncher::setup(){
 		return false;
 	}
 
-	if(!inst->loadPthreads()){
-		cerr << "pthreads did not reload" << endl;
-		return false;
-	}
+//	if(!inst->loadPthreads()){
+//		cerr << "pthreads did not reload" << endl;
+//		return false;
+//	}
 
 	if(!inst->staticInitCalls()){
 		cerr << "init calls failed" << endl;
@@ -77,31 +77,37 @@ bool StaticLauncher::setup(){
 		}
 	}
 
-	if(!inst->threadCreation()){
-		cerr << "thread creation failed" << endl;
+	if(!inst->relocatePthreads()){
+		cerr << "relocation failed" << endl;
 		return false;
 	}
 
-	if(!inst->threadDestruction()){
-		cerr << "thread destruction failed" << endl;
-		return false;
-	}
 
-	if(!inst->instrumentContention()){
-		cerr << "contention failed" << endl;
-		return false;
-	}
-
-//	if(!inst->time()){
-//		cerr << "time failed" << endl;
+//	if(!inst->threadCreation()){
+//		cerr << "thread creation failed" << endl;
 //		return false;
 //	}
-
-	if(!inst->instrumentExit()){
-		inst->finalFunction("main");
-		//if QoS method specified make the endpoint at the exit
-		//may need better logic here
-	}
+//
+//	if(!inst->threadDestruction()){
+//		cerr << "thread destruction failed" << endl;
+//		return false;
+//	}
+//
+//	if(!inst->instrumentContention()){
+//		cerr << "contention failed" << endl;
+//		return false;
+//	}
+//
+////	if(!inst->time()){
+////		cerr << "time failed" << endl;
+////		return false;
+////	}
+//
+//	if(!inst->instrumentExit()){
+//		inst->finalFunction("main");
+//		//if QoS method specified make the endpoint at the exit
+//		//may need better logic here
+//	}
 
 	bool mod;
 	bin->finalizeInsertionSet(true, &mod);

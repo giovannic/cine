@@ -25,7 +25,7 @@ Instrumenter::Instrumenter(Analyser *a, BPatch_addressSpace *as){
 	analyser = a;
 	app = as;
 	timers = new vector<BPatchSnippetHandle *>();
-	cinemodules = new vector<BPatch_object *>();
+	cinemodules = new set<BPatch_object *>();
 	replacemap = new ReplaceMap();
 	idMap = new IdMap();
 	//cache function calls
@@ -256,7 +256,6 @@ bool Instrumenter::instrumentThreadEntry(BPatch_function *entryFunction,
 //lets hope we are not "clobbering" registers the compiler thinks are untouched
 bool Instrumenter::wrapFunction(BPatch_function *f, BPatch_function *newf, BPatch_function *oldf){
 	SymtabAPI::Module *symtab = SymtabAPI::convert(oldf->getModule());
-
 	SymtabAPI::Symbol *sym = findSymbol(symtab, oldf->getName());
 
 	if (sym == NULL){
@@ -264,9 +263,24 @@ bool Instrumenter::wrapFunction(BPatch_function *f, BPatch_function *newf, BPatc
 		return false;
 	}
 
+	(*replacemap)[f] = oldf;
+
+
 	if (!app->wrapFunction(f, newf, sym)){
 		return false;
 	}
+
+	//fix cine libraries
+//	vector<BPatch_point *>callers;
+//	f->getCallerPoints(callers);
+//	for (vector<BPatch_point *>::const_iterator caller = callers.begin();
+//			caller != callers.end(); caller++){
+//		BPatch_point *call = *caller;
+//		if (cinemodules->find(call->getFunction()->getModule()->getObject()) != cinemodules->end()){
+//			app->replaceFunctionCall(*call, *oldf);
+//		}
+//	}
+
 	return true;
 }
 
@@ -761,27 +775,27 @@ bool Instrumenter::registerMethods(SpeedupMap &speedups){
 }
 
 bool Instrumenter::instrumentLibraries(){
-//	vector<BPatch_module *>ms;
-//	for (vector<BPatch_object*>::const_iterator it = cinemodules->begin();
-//			it != cinemodules->end(); it++){
-//		BPatch_object *o = *it;
-//		o->modules(ms);
-//
-//		for (vector<BPatch_module*>::const_iterator im = ms.begin();
-//			im != ms.end(); im++){
-//			BPatch_module *m = *im;
-//			vector<BPatch_function*>mfs =  m->getProcedures();
-//			for (vector<BPatch_function*>::const_iterator itf = mfs.begin();
-//					itf != mfs.end(); itf++){
-//				vector<BPatch_point*>calls;
-//				(*itf)->getCallPoints(calls);
-//				for (vector<BPatch_point*>::const_iterator call = calls.begin();
-//						call != calls.end(); call++){
-//					manageCall(*call);
-//				}
-//			}
-//		}
-//	}
+	vector<BPatch_module *>ms;
+	for (set<BPatch_object*>::const_iterator it = cinemodules->begin();
+			it != cinemodules->end(); it++){
+		BPatch_object *o = *it;
+		o->modules(ms);
+
+		for (vector<BPatch_module*>::const_iterator im = ms.begin();
+			im != ms.end(); im++){
+			BPatch_module *m = *im;
+			vector<BPatch_function*>*mfs =  m->getProcedures();
+			for (vector<BPatch_function*>::const_iterator itf = mfs->begin();
+					itf != mfs->end(); itf++){
+				vector<BPatch_point*>calls;
+				(*itf)->getCallPoints(calls);
+				for (vector<BPatch_point*>::const_iterator call = calls.begin();
+						call != calls.end(); call++){
+					manageCall(*call);
+				}
+			}
+		}
+	}
 	return false;
 }
 
@@ -793,13 +807,21 @@ bool Instrumenter::loadLibraries(){
 		cerr << "target loading of vex failed" << endl;
 		return false;
 	}
-	cinemodules->push_back(lib);
+	cinemodules->insert(lib);
 
 	if((lib = app->loadLibrary("libcine.so")) == NULL){
 		cerr << "target loading of cine failed" << endl;
 		return false;
 	}
-	cinemodules->push_back(lib);
+	cinemodules->insert(lib);
+
+	if(app->loadLibrary("libpthread_place.so") == NULL){
+		cerr << "target loading of pthread placeholder failed" << endl;
+		return false;
+	}
+
+	relocatePthreads();
+	instrumentLibraries();
 
 	return true;
 }
@@ -904,7 +926,12 @@ bool Instrumenter::time() {
 }
 
 void Instrumenter::manageCall(BPatch_point* call) {
-//	if(call->getCalledFunction())
+	ReplaceMap::iterator elem;
+	if((elem = replacemap->find(call->getCalledFunction())) != replacemap->end()){
+		if(!app->replaceFunctionCall(*call,*(*elem).second)){
+			cerr << "failed to replace at " << call->getFunction()->getName() << endl;
+		}
+	}
 }
 
 bool Instrumenter::registerSpeedup(int mid, long speedup) {
@@ -939,6 +966,51 @@ void Instrumenter::removeTime(int mid) {
 	idMap->erase(mid);
 	delete ss;
 }
-//void Instrumenter::patchUserMessage() {
-//	BPatch_function *invalidate = analyser->getFunction("cine_timer_invalidate_exit");
-//}
+
+bool Instrumenter::relocatePthreads() {
+	BPatch_function *create = analyser->getFunction("pthread_create");
+	BPatch_function *cineCreate = analyser->getFunction("cine_wrap_thread_create");
+	BPatch_function *replaceCreate = analyser->getFunction("orig_thread_create");
+
+	BPatch_function *lock = analyser->getFunction("pthread_mutex_lock");
+	BPatch_function *cineLock = analyser->getFunction("cine_mutex_lock");
+	BPatch_function *replaceLock = analyser->getFunction("orig_mutex_lock");
+
+	BPatch_function *unlock = analyser->getFunction("pthread_mutex_unlock");
+	BPatch_function *cineunLock = analyser->getFunction("cine_mutex_unlock");
+	BPatch_function *replaceunLock = analyser->getFunction("orig_mutex_unlock");
+
+	BPatch_function *wait = analyser->getFunction("pthread_cond_wait");
+	BPatch_function *cineWait = analyser->getFunction("cine_cond_wait");
+	BPatch_function *replaceWait = analyser->getFunction("orig_cond_wait");
+
+	BPatch_function *timedwait = analyser->getFunction("pthread_cond_timedwait");
+	BPatch_function *cineTimedwait= analyser->getFunction("cine_cond_timedwait");
+	BPatch_function *replaceTimedwait = analyser->getFunction("orig_cond_timedwait");
+
+	BPatch_function *broadcast = analyser->getFunction("pthread_cond_broadcast");
+	BPatch_function *cineBroadcast = analyser->getFunction("cine_cond_broadcast");
+	BPatch_function *replaceBroadcast = analyser->getFunction("orig_cond_broadcast");
+
+	BPatch_function *signal = analyser->getFunction("pthread_cond_signal");
+	BPatch_function *cineSignal = analyser->getFunction("cine_cond_signal");
+	BPatch_function *replaceSignal = analyser->getFunction("orig_cond_signal");
+
+	BPatch_function *sleep = analyser->getFunction("sleep");
+	BPatch_function *cineSleep = analyser->getFunction("cine_sleep");
+	BPatch_function *replaceSleep = analyser->getFunction("orig_sleep");
+
+	BPatch_function *yield = analyser->getFunction("pthread_yield");
+	BPatch_function *cineYield = analyser->getFunction("cine_yield");
+	BPatch_function *replaceYield = analyser->getFunction("orig_yield");
+
+	return (wrapFunction(create, cineCreate, replaceCreate) &&
+			wrapFunction(lock, cineLock, replaceLock) &&
+			wrapFunction(unlock, cineunLock, replaceunLock) &&
+			wrapFunction(wait, cineWait, replaceWait) &&
+			wrapFunction(timedwait, cineTimedwait, replaceTimedwait) &&
+			wrapFunction(broadcast, cineBroadcast, replaceBroadcast) &&
+			wrapFunction(signal, cineSignal, replaceSignal) &&
+			wrapFunction(sleep, cineSleep, replaceSleep) &&
+			wrapFunction(yield, cineYield, replaceYield));
+}

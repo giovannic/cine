@@ -55,4 +55,10 @@ cine_env.Append(CCFLAGS=['-g'])
 if debug:
 	cine_env.Append(CPPDEFINES=['CINEDEBUG'])
 
+
 cine = cine_env.SharedLibrary(dest + 'lib/cine.so', cine_sources)
+
+orig_sources = ['profiler/collector/thread_relocation.cpp']
+orig_env = Environment()
+orig_env.Append(CPPPATH=['profiler/collector/h'])
+orig = orig_env.SharedLibrary(dest + 'lib/pthread_place.so', orig_sources)

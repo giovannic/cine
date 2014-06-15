@@ -44,6 +44,7 @@ public:
     bool threadCreation();
     bool threadCreate();
     bool threadLocklessCreate();
+    bool relocatePthreads();
     bool time();
     bool threadDestruction();
     bool debugStart();
@@ -53,8 +54,8 @@ private:
     Analyser *analyser;
 	BPatch_addressSpace *app;
 	vector<BPatchSnippetHandle *> *timers;
-	vector<BPatch_object *> *cinemodules;
-	typedef unordered_map<BPatch_function*, BPatch_function*> ReplaceMap;
+	set<BPatch_object *> *cinemodules;
+	typedef map<BPatch_function*, BPatch_function*> ReplaceMap;
 	typedef map<int, vector<BPatchSnippetHandle *>*>IdMap;
 	ReplaceMap *replacemap;
 	IdMap *idMap;
