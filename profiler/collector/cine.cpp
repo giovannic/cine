@@ -308,7 +308,7 @@ void cine_start_thread(){
 }
 
 void cine_timer_entry(int id){
-//	DEBUG_PRINT(("entry %d %lu\n", id, pthread_self()));
+	DEBUG_PRINT(("entry %d %lu\n", id, pthread_self()));
 	//recursive methods do not matter
 	methodEventsBehaviour->afterMethodEntry(id);
 }
@@ -330,7 +330,7 @@ void cine_timer_entry_thread_check(int id){
 }
 
 void cine_timer_exit(int id){
-//	DEBUG_PRINT(("exit %d %lu\n", id, pthread_self()));
+	DEBUG_PRINT(("exit %d %lu\n", id, pthread_self()));
 	if(methodEventsBehaviour->beforeMethodExit(id)){
 		eventLogger->getMethodDataOf(id)->setInvalidated();
 //		cout << eventLogger->getMethodDataOf(id)->getName() << endl;

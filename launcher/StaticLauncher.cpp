@@ -22,7 +22,7 @@ using namespace std;
 using namespace Dyninst;
 
 StaticLauncher::StaticLauncher():Launcher() {
-//	bpatch->setInstrStackFrames(true); //TODO: remove when understood
+	bpatch->setInstrStackFrames(true); //TODO: remove when understood
 }
 
 StaticLauncher::~StaticLauncher() {
