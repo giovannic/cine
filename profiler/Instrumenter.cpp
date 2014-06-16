@@ -820,8 +820,22 @@ bool Instrumenter::loadLibraries(){
 		return false;
 	}
 
-	relocatePthreads();
-	instrumentLibraries();
+
+//	BPatch_function *test = analyser->getFunction("Scheduling::lockShareResourceAccessKey");
+//	vector<BPatch_point *> calls;
+//	test->getCallPoints(calls);
+//	cout << calls.front()->getFunction()->getName() << " calls found to" << endl;
+//	for (vector<BPatch_point *>::iterator it = calls.begin();
+//			it != calls.end(); it++){
+//		ReplaceMap::iterator elem;
+//		if((elem = replacemap->find((*it)->getCalledFunction())) != replacemap->end()){
+//			if(app->replaceFunctionCall(*(*it),*(*elem).second)){
+//				cerr << "replaced call " << endl;
+//			}
+//		}
+//	}
+//	relocatePthreads();
+//	instrumentLibraries();
 
 	return true;
 }
