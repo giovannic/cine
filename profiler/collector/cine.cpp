@@ -338,10 +338,11 @@ void cine_timer_exit(int id){
 }
 
 void cine_timer_invalidate_exit(int id){
-	DEBUG_PRINT(("exit %d %lu\n", id, pthread_self()));
-	if(methodEventsBehaviour->beforeMethodExit(id)){
+//	DEBUG_PRINT(("exit %d %lu\n", id, pthread_self()));
+	if(methodEventsBehaviour->beforeMethodExit(id) && !eventLogger->getMethodDataOf(id)->isInvalidated()){
 		InvMsg_t *msg = new InvMsg();
 		msg->mid = id;
+		DEBUG_PRINT(("invalidating %d \n", id));
 		if ((*DYNINSTuserMessageSym)(msg, id) != 0){
 			DEBUG_PRINT(("message failed\n"));
 		}

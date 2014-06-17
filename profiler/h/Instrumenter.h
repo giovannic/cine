@@ -17,7 +17,7 @@
 
 using namespace std;
 
-typedef map<BPatch_function*, long> SpeedupMap;
+typedef map<string, long> SpeedupMap;
 
 class Instrumenter {
 public:

@@ -29,8 +29,11 @@ int main(int argc, char* argv[]) {
 			} else if(token == string("-dynamic")){
 				l = new DynamicLauncher();
 			} else if(token == string("-speedup")){
-				l->registerSpeedup(args.front(), stod(*(args.begin()++)));
-				args.pop_front(); args.pop_front();
+				string name = args.front();
+				args.pop_front();
+				string speedup = args.front();
+				args.pop_front();
+				l->registerSpeedup(name, stod(speedup));
 			} else if(token == string("-adapt")){
 				l->registerInvalidation(args.front());
 				args.pop_front();

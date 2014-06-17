@@ -747,9 +747,11 @@ bool Instrumenter::registerMethods(SpeedupMap &speedups){
 			DEBUG_PRINT(("method cannot be registered \n"));
 		}
 
-		map<BPatch_function*,long>::iterator record;
-		if((record = speedups.find(f)) != speedups.end()){
-			registerSpeedup(mid, (*record).second);
+		SpeedupMap::iterator record;
+		for (record = speedups.begin(); record != speedups.end(); record++){
+			if ((*record).first == f->getName()){
+				registerSpeedup(mid, (*record).second);
+			}
 		}
 
 		if(!timeFunction(f, mid)){
@@ -909,11 +911,15 @@ void Instrumenter::manageCall(BPatch_point* call) {
 
 bool Instrumenter::registerSpeedup(int mid, long speedup) {
 	BPatch_function *reg = analyser->getFunction("cine_speedup_registration");
+	BPatch_function * programStart = analyser->getFunction("_start");
+	vector<BPatch_point *> *start = programStart->findPoint(BPatch_entry);
 	vector<BPatch_snippet *> margs;
 	BPatch_constExpr id(mid);
 	margs.push_back(&id);
 	BPatch_constExpr speeduparg((long)speedup);
 	margs.push_back(&speeduparg);
+	BPatch_funcCallExpr speedupCall(*reg,margs);
+	return app->insertSnippet(speedupCall, *start,BPatch_lastSnippet);
 }
 
 bool Instrumenter::loadDyninst() {

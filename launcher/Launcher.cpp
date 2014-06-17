@@ -45,7 +45,8 @@ void Launcher::setInput(string &input) {
 }
 
 bool Launcher::registerSpeedup(string& function, double speedup) {
-	(*speedups)[analyser->getFunction(function)] = (long)speedup;
+	string *fname = new string(function);
+	(*speedups)[*fname] = (long)speedup;
 	return true;
 }
 
