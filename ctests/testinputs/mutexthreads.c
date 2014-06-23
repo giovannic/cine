@@ -24,6 +24,35 @@ int     count = 0;
 pthread_mutex_t count_mutex;
 pthread_cond_t count_threshold_cv;
 
+void *double_inc_count(void *t) 
+{
+  int i;
+  long my_id = (long)t;
+
+  for (i=0; i < TCOUNT; i++) {
+    pthread_mutex_lock(&count_mutex);
+    count++;
+
+    /* 
+    Check the value of count and signal waiting thread when condition is
+    reached.  Note that this occurs while mutex is locked. 
+    */
+    if (count == COUNT_LIMIT) {
+      printf("inc_count(): thread %ld, count = %d  Threshold reached. \n",
+             my_id, count);
+      pthread_cond_signal(&count_threshold_cv);
+      printf("Just sent signal.\n");
+      }
+    printf("inc_count(): thread %ld, count = %d, unlocking mutex\n", 
+	   my_id, count);
+    pthread_mutex_unlock(&count_mutex);
+
+    /* Do some work so threads can alternate on mutex lock */
+    sleep(2);
+    }
+  pthread_exit(NULL);
+}
+
 void *inc_count(void *t) 
 {
   int i;
@@ -96,7 +125,7 @@ int main(int argc, char *argv[])
   pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
   pthread_create(&threads[0], &attr, watch_count, (void *)t1);
   pthread_create(&threads[1], &attr, inc_count, (void *)t2);
-  pthread_create(&threads[2], &attr, inc_count, (void *)t3);
+  pthread_create(&threads[2], &attr, double_inc_count, (void *)t3);
 
   /* Wait for all threads to complete */
   for (i = 0; i < NUM_THREADS; i++) {

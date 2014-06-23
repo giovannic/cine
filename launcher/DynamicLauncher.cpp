@@ -91,6 +91,8 @@ bool DynamicLauncher::setup(){
 		return false;
 	}
 
+	ctrl->registerSpeedups(speedups);
+
 	if(!ctrl->registerMethods(policy != NULL)){
 		cerr << "unable to register methods" << endl;
 		return false;

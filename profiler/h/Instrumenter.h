@@ -17,7 +17,7 @@
 
 using namespace std;
 
-typedef map<string, long> SpeedupMap;
+typedef map<string, double> SpeedupMap;
 
 class Instrumenter {
 public:
@@ -63,7 +63,7 @@ private:
     bool instrumentThreadEntry(BPatch_function *entryFunction);
     bool instrumentThreadEntry(BPatch_function *entryFunction,
     		BPatch_function *start, BPatch_function *end);
-    bool registerSpeedup(int mid, long speedup);
+    bool registerSpeedup(int mid, double speedup);
     bool threadStart();
     bool threadJoin();
     bool threadExit();

@@ -16,6 +16,7 @@
 #include "debug.h"
 #include "CineMessage.h"
 #include <dlfcn.h>
+#include <string>
 
 //TODO:separate this
 
@@ -407,9 +408,9 @@ void cine_method_registration(char *name, int mid){
 	eventLogger->registerMethod(name, mid);
 }
 
-void cine_speedup_registration(int mid, long speedup){
-	DEBUG_PRINT(("registering %d %lu \n", mid, speedup));
-	methodEventsBehaviour->registerMethodTimeScalingFactor(mid, (double)speedup);
+void cine_speedup_registration(int mid, char *speedup){
+	DEBUG_PRINT(("registering %d %s\n", mid, speedup));
+	methodEventsBehaviour->registerMethodTimeScalingFactor(mid, stod(speedup));
 }
 
 void print_address(void *dest){

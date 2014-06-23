@@ -27,13 +27,16 @@ public:
 	bool registerInvalidation(string &policy);
 	bool beginSimulator();
 	bool registerMethods(bool invalidating);
+	void registerSpeedups(SpeedupMap *speedups);
 	void cleanupListener();
 private:
 	void listenInvalidation();
+	bool registerSpeedup(int mid, double speedup);
 	Instrumenter *inst;
 	BPatch_process *proc;
 	Analyser *analyser;
 	Listener *listener;
+	SpeedupMap *speedups;
 };
 
 #endif /* CONTROLLER_H_ */

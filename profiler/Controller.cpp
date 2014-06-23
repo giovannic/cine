@@ -120,11 +120,35 @@ bool Controller::registerMethods(bool invalidating=false){
 		} else {
 			inst->timeFunction(f, mid);
 		}
-//		inst->timeFunctionCalls(f, mid);
+		if(speedups != NULL){
+			SpeedupMap::iterator record;
+			for (record = speedups->begin(); record != speedups->end(); record++){
+				if ((*record).first == f->getName()){
+					registerSpeedup(mid, (*record).second);
+				}
+			}
+		}
 
 		mid++;
 	}
 	return true;
+}
+
+bool Controller::registerSpeedup(int mid, double speedup) {
+	BPatch_function *reg = analyser->getFunction("cine_speedup_registration");
+	BPatch_function * programStart = analyser->getFunction("_start");
+	vector<BPatch_point *> *start = programStart->findPoint(BPatch_entry);
+	vector<BPatch_snippet *> margs;
+	BPatch_constExpr id(mid);
+	margs.push_back(&id);
+	ostringstream s;
+	s << speedup;
+	BPatch_constExpr speeduparg(s.str().c_str());
+	margs.push_back(&speeduparg);
+	BPatch_funcCallExpr speedupCall(*reg,margs);
+	bool err;
+	proc->oneTimeCode(speedupCall, &err);
+	return err;
 }
 
 void Controller::getResults() {
@@ -143,4 +167,8 @@ void Controller::getResults() {
 	if(err){
 		cerr << "some onetime code error on exit " << endl;
 	}
+}
+
+void Controller::registerSpeedups(SpeedupMap *speedups) {
+	this->speedups = speedups;
 }

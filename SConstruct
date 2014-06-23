@@ -51,7 +51,7 @@ cine_sources = ['profiler/collector/cine.cpp']
 cine_env.Append(CPPPATH=['profiler/h', 'profiler/collector/h', dyninstinc, vexinc])
 cine_env.Append(LIBPATH=[dyninstlib, vexlib])
 cine_env.Append(LIBS=['pthread', 'vex', 'dyninstAPI_RT'])
-cine_env.Append(CCFLAGS=['-g'])
+cine_env.Append(CCFLAGS=cflags)
 if debug:
 	cine_env.Append(CPPDEFINES=['CINEDEBUG'])
 

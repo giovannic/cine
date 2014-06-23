@@ -909,14 +909,16 @@ void Instrumenter::manageCall(BPatch_point* call) {
 //	if(call->getCalledFunction())
 }
 
-bool Instrumenter::registerSpeedup(int mid, long speedup) {
+bool Instrumenter::registerSpeedup(int mid, double speedup) {
 	BPatch_function *reg = analyser->getFunction("cine_speedup_registration");
 	BPatch_function * programStart = analyser->getFunction("_start");
 	vector<BPatch_point *> *start = programStart->findPoint(BPatch_entry);
 	vector<BPatch_snippet *> margs;
 	BPatch_constExpr id(mid);
 	margs.push_back(&id);
-	BPatch_constExpr speeduparg((long)speedup);
+	ostringstream s;
+	s << speedup;
+	BPatch_constExpr speeduparg(s.str().c_str());
 	margs.push_back(&speeduparg);
 	BPatch_funcCallExpr speedupCall(*reg,margs);
 	return app->insertSnippet(speedupCall, *start,BPatch_lastSnippet);

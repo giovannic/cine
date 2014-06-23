@@ -46,7 +46,7 @@ void Launcher::setInput(string &input) {
 
 bool Launcher::registerSpeedup(string& function, double speedup) {
 	string *fname = new string(function);
-	(*speedups)[*fname] = (long)speedup;
+	(*speedups)[*fname] = speedup;
 	return true;
 }
 

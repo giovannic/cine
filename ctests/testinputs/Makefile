@@ -1,7 +1,7 @@
 CFLAGS= -g
 VEXDIR= /home/giovanni/vexjine/src/vex
-CINELIB = /home/giovanni/cine/lib
-CINEINC = /home/giovanni/cine/profiler/h
+CINELIB = /home/giovanni/cine/exp/lib
+CINEINC = /home/giovanni/cine/profiler/collector/h
 
 all: threads mutexthreads vexmutexthreads
 
