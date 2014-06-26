@@ -1,0 +1,17 @@
+This project requires Scons, Dyninst and Vexjine
+
+If these projects are installed to non-standard directories, they can be
+specified in "buildenv.sh" and "bin/env.sh"
+
+Build:
+type `. buildenv.sh` to set the library paths if you have specified them
+type `scons` to run the builder
+the cine collector library will be built to "lib" and the instrumenter will be
+built to "bin"
+
+Run:
+cd to the "bin" directory
+type `. env.sh` to set the runtime paths that Dyninst requires 
+execute the cine program with the following usage:
+
+cine -static|-dynamic [-speedup rate] [-methodfile file] [-adapt policy] input arguments
